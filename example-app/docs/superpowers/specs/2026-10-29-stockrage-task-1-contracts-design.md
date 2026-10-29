@@ -1,7 +1,9 @@
 # STOCKRAGE Task 1: Operating Rules and Contracts Design
 
-**Date:** 2026-10-29  
-**Status:** Interview decisions confirmed; technical proposals below await document review. Planning only.  
+**Date:** 2026-10-29
+
+**Status:** Interview decisions confirmed; technical proposals below await document review. Planning only.
+
 **Scope:** Task 1 of [the frontend action plan](../plans/2026-10-29-stockrage-frontend-action-plan.md).
 
 ## Intent and boundary
