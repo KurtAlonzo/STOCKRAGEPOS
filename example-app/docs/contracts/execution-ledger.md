@@ -11,3 +11,5 @@ Ruling: Full check retains five pre-existing formatting failures; format only ow
 
 Ruling: Commit the tightly coupled type/action/fixture deliverables together after final review rather than per task; avoids recording intermediate incomplete contract shapes. Risk: less granular history, no product-runtime impact.
 Tasks 1.1–1.3: complete; 1.4 artifacts reconciled, agreement pending. Tests: 12/12; types: pass; scoped lint: pass. Final review: four important findings fixed with observed RED-to-GREEN checks; no deferred minors.
+
+Acceptance — 2026-10-30: User confirmed the delivered contracts match business rules. Task 1.4 agreement complete; parent Task 1 marked contract-ready for development. Task 2 is next. No new implementation or test run in this documentation-only acceptance update.

@@ -1,0 +1,296 @@
+/* ==========================================
+   STOCKRAGE DESIGN SYSTEM
+========================================== */
+
+:root {
+    --brand-red: #BC0202;
+    --brand-dark: #830000;
+    --brand-bright: #FF0000;
+
+    --sidebar-bg: #000000;
+    --sidebar-text: #FFFFFF;
+
+    --page-bg: #F5F6F8;
+    --card-bg: #FFFFFF;
+
+    --text-primary: #171717;
+    --text-secondary: #666666;
+
+    --border-color: #E5E7EB;
+}
+
+/* DARK MODE */
+
+[data-theme="dark"] {
+    --page-bg: #121212;
+    --card-bg: #1E1E1E;
+
+    --text-primary: #F5F5F5;
+    --text-secondary: #A3A3A3;
+
+    --border-color: #333333;
+}
+
+/* ==========================================
+   GLOBAL STYLES
+========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--page-bg);
+    color: var(--text-primary);
+}
+
+button,
+a {
+    font: inherit;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 25px 15px;
+    overflow-y: auto;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-bottom: 40px;
+}
+
+.brand-icon {
+    width: 45px;
+    height: 45px;
+
+    background-color: var(--brand-red);
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.brand-text h2 {
+    font-size: 19px;
+}
+
+.brand-text p {
+    font-size: 11px;
+    color: #AAAAAA;
+}
+
+/* NAVIGATION */
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.nav-label {
+    font-size: 11px;
+    color: #888888;
+
+    margin: 15px 10px;
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    display: block;
+
+    padding: 13px 15px;
+    border-radius: 8px;
+
+    color: #CCCCCC;
+    text-decoration: none;
+
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #222222;
+    color: white;
+}
+
+.nav-link.active {
+    background-color: var(--brand-dark);
+    color: white;
+    font-weight: bold;
+}
+
+.settings-label {
+    margin-top: 30px;
+}
+
+/* SIDEBAR BOTTOM */
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding-top: 25px;
+}
+
+.theme-toggle {
+    width: 100%;
+    padding: 12px;
+
+    background-color: var(--brand-red);
+    color: white;
+
+    border: none;
+    border-radius: 8px;
+
+    cursor: pointer;
+}
+
+.theme-toggle:hover {
+    background-color: var(--brand-dark);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-top: 25px;
+    padding-top: 20px;
+
+    border-top: 1px solid #333333;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+
+    background-color: var(--brand-red);
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-info strong {
+    font-size: 13px;
+}
+
+.user-info p {
+    font-size: 11px;
+    color: #AAAAAA;
+}
+
+/* ==========================================
+   MAIN CONTENT
+========================================== */
+
+.main-content {
+    margin-left: 250px;
+    padding: 35px;
+    min-height: 100vh;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+}
+
+/* ==========================================
+   DASHBOARD
+========================================== */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.dashboard-card {
+    background-color: var(--card-bg);
+
+    padding: 25px;
+    border-radius: 12px;
+
+    border: 1px solid var(--border-color);
+}
+
+.dashboard-card h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+
+    margin-bottom: 15px;
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.warning {
+    color: #E05A5A;
+}
+
+.sample-note {
+    margin-top: 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-content {
+        margin-left: 200px;
+        padding: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -182,10 +182,12 @@ Catalog/category removal means archive/deactivate through PATCH. Do not specify 
 - [x] **Step 3:** Include a future backend acceptance checklist: actual store/owner enforcement, runtime validation, atomic competing-stock completion, concurrent idempotent replay, crash recovery, confirmed replay after quote expiry, duplicate-reference review, full reversal/restock once, and original snapshots after catalog changes. No fixture test marks those checks passed.
 - [x] **Step 4:** Reconcile all payment-reference wording: optional, receipt confirmation mandatory, duplicates warn/allow, no payment-provider verification. Label tax treatment unresolved and a live-use blocker. Document any technical proposal changed during implementation and why.
 - [x] **Step 5:** Run `npm run test:contracts` and `npm run types:check` after the final artifact changes; rerun `npm run check` if source/config changed since its last pass. Record commands, outcomes, and any baseline limitations in the handoff. No browser/checkout integration verification is implied.
-- [ ] **Step 6:** Present the contract package for agreement. Parent Task 1 says “agreed”; leave it pending if review is outstanding. Once agreed and checks pass, mark it **contract-ready for development**, retain the explicit tax live-use blocker, and identify Task 2 as the next work package. Commit only the final documentation paths.
+- [x] **Step 6:** Present the contract package for agreement. Parent Task 1 says “agreed”; leave it pending if review is outstanding. Once agreed and checks pass, mark it **contract-ready for development**, retain the explicit tax live-use blocker, and identify Task 2 as the next work package. Commit only the final documentation paths.
 
 ## Execution handoff
 
 Recommended execution: **Native**, completing the four deliverables in order. They share one vocabulary and fixture set, so sequential work keeps drift low. Use subagents only with explicit authorization. Review this plan/spec before product implementation; the current request is planning only.
 
 This work does not create working business endpoints or prove production readiness. Tax treatment remains unresolved. Task 2 and later backend integration need their own authorized execution and relevant tests.
+
+**Acceptance — 2026-10-30:** User confirmed the delivered contracts match the business rules. Task 1 is contract-ready for development. Task 2 is next; backend acceptance and tax treatment remain outstanding before live use.

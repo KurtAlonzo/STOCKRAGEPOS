@@ -137,7 +137,7 @@ resources/js/fixtures/pos/scenarios.ts is explicitly fixture-only. It contains t
 
 ## Handoff
 
-Contract implementation awaits review/agreement; this is not an integrated POS. Tax treatment is unconfigured and blocks live use. No business route, persistence, provider integration or checkout screen is implemented. Once agreed, Task 2 is the next work package.
+User confirmed business-rule agreement on 2026-10-30. Task 1 is contract-ready for development; this is not an integrated POS. Tax treatment is unconfigured and blocks live use. No business route, persistence, provider integration or checkout screen is implemented. Task 2 is the next work package.
 
 ## Verification record — 2026-10-29
 
@@ -146,4 +146,4 @@ Contract implementation awaits review/agreement; this is not an integrated POS. 
 - Scoped lint and formatting: passed for contract source/config files.
 - Repository-wide npm run check: blocked by pre-existing formatting outside this package (see execution ledger).
 - Fresh review completed; all four important findings corrected and covered. No deferred review findings.
-- Backend acceptance remains unchecked. Tax remains a live-use blocker. Parent Task 1 agreement is pending user review.
+- Backend acceptance remains unchecked. Tax remains a live-use blocker. User agreement recorded on 2026-10-30; parent Task 1 is complete at the contract level.

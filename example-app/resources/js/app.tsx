@@ -4,16 +4,24 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import PosLayout from '@/layouts/pos-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'STOCKRAGE POS';
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
-                return null;
+            case name === 'dev/pos-shell':
+                return ({ children }: { children: React.ReactNode }) => (
+                    <PosLayout
+                        picker={children}
+                        cart={<p>Example cart — sample data only</p>}
+                        summary={<span>View example cart</span>}
+                        footer={<p>Checkout is unavailable in this preview.</p>}
+                    />
+                );
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

@@ -37,10 +37,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('settings/teams', [TeamController::class, 'store'])->name('teams.store');
 
     Route::middleware(EnsureTeamMembership::class)->group(function () {
-        Route::get('settings/teams/{team}', [TeamController::class, 'edit'])->name('teams.edit');
-        Route::patch('settings/teams/{team}', [TeamController::class, 'update'])->name('teams.update');
-        Route::delete('settings/teams/{team}', [TeamController::class, 'destroy'])->name('teams.destroy');
-        Route::post('settings/teams/{team}/switch', [TeamController::class, 'switch'])->name('teams.switch');
+        Route::get('settings/teams/{team}', [TeamController::class, 'edit'])->middleware(EnsureTeamMembership::class.':owner')->name('teams.edit');
+        Route::patch('settings/teams/{team}', [TeamController::class, 'update'])->middleware(EnsureTeamMembership::class.':owner')->name('teams.update');
+        Route::delete('settings/teams/{team}', [TeamController::class, 'destroy'])->middleware(EnsureTeamMembership::class.':owner')->name('teams.destroy');
+        Route::post('settings/teams/{team}/switch', [TeamController::class, 'switch'])->middleware(EnsureTeamMembership::class.':owner')->name('teams.switch');
         Route::delete('settings/teams/{team}/leave', [TeamController::class, 'leave'])->name('teams.leave');
 
         Route::patch('settings/teams/{team}/members/{user}', [TeamMemberController::class, 'update'])->name('teams.members.update');

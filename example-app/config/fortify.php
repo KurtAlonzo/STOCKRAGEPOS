@@ -168,7 +168,7 @@ return [
 
     'features' => [
         /* @chisel-registration */
-        Features::registration(),
+        // Public registration is disabled for this private installation.
         /* @end-chisel-registration */
         Features::resetPasswords(),
         /* @chisel-email-verification */

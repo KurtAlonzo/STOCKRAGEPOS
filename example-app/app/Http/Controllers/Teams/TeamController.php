@@ -27,7 +27,7 @@ class TeamController extends Controller
         $user = $request->user();
 
         return Inertia::render('teams/index', [
-            'teams' => $user->toUserTeams(includeCurrent: true),
+            'teams' => $user->ownedTeams()->get()->map(fn (Team $team) => $user->toUserTeam($team)),
         ]);
     }
 
@@ -36,9 +36,10 @@ class TeamController extends Controller
      */
     public function store(SaveTeamRequest $request, CreateTeam $createTeam): RedirectResponse
     {
+        abort_unless($request->user()->ownedTeams()->exists(), 403);
         $team = $createTeam->handle($request->user(), $request->validated('name'));
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team created.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Store created.')]);
 
         return to_route('teams.edit', ['team' => $team->slug]);
     }
@@ -100,7 +101,7 @@ class TeamController extends Controller
             return $team;
         });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Store updated.')]);
 
         return to_route('teams.edit', ['team' => $team->slug]);
     }
@@ -114,7 +115,7 @@ class TeamController extends Controller
 
         $request->user()->switchTeam($team);
 
-        return back();
+        return to_route('dashboard', ['current_team' => $team->slug]);
     }
 
     /**
@@ -167,7 +168,7 @@ class TeamController extends Controller
             $user->switchTeam($fallbackTeam);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team deleted.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Store deleted.')]);
 
         return to_route('teams.index');
     }

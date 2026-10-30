@@ -6,21 +6,22 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/hooks/use-current-url';
+import { usePage } from '@inertiajs/react';
+import { getActiveNavIndex } from '@/lib/navigation-path';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items }: { items: NavItem[] }) {
-    const { isCurrentUrl } = useCurrentUrl();
+    const activeIndex = getActiveNavIndex(usePage().url, items);
 
     return (
         <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
             <SidebarMenu>
-                {items.map((item) => (
+                {items.map((item, index) => (
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
-                            isActive={isCurrentUrl(item.href)}
+                            isActive={index === activeIndex}
                             tooltip={{ children: item.title }}
                         >
                             <Link href={item.href} prefetch>

@@ -394,7 +394,7 @@ class TeamTest extends TestCase
         $user = User::factory()->create();
         $team = Team::factory()->create();
 
-        $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+        $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
 
         $response = $this
             ->actingAs($user)

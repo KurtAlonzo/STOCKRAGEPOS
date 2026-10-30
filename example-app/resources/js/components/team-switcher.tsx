@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { Check, ChevronsUpDown, Plus, Users } from 'lucide-react';
 import CreateTeamModal from '@/components/create-team-modal';
@@ -24,37 +25,20 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
     const currentTeam = page.props.currentTeam;
     const teams = page.props.teams ?? [];
 
+    const [switching, setSwitching] = useState(false);
     const switchTeam = (team: Team) => {
-        const previousTeamSlug = currentTeam?.slug;
-
+        if (switching) return;
+        setSwitching(true);
         router.visit(switchMethod(team.slug), {
-            onFinish: () => {
-                if (!previousTeamSlug || typeof window === 'undefined') {
-                    router.reload();
-
-                    return;
-                }
-
-                const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-                const segment = `/${previousTeamSlug}`;
-
-                if (currentUrl.includes(segment)) {
-                    router.visit(currentUrl.replace(segment, `/${team.slug}`), {
-                        replace: true,
-                    });
-
-                    return;
-                }
-
-                router.reload();
-            },
+            preserveState: false,
+            onFinish: () => setSwitching(false),
         });
     };
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
+                    disabled={switching}
                     variant="ghost"
                     data-test="team-switcher-trigger"
                     className={
@@ -84,7 +68,7 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
                                     : 'truncate font-semibold'
                             }
                         >
-                            {currentTeam?.name ?? 'Select team'}
+                            {currentTeam?.name ?? 'Select store'}
                         </span>
                     </div>
                     <ChevronsUpDown
@@ -107,7 +91,7 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
                 sideOffset={inHeader ? undefined : 4}
             >
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Teams
+                    Stores
                 </DropdownMenuLabel>
                 {teams.map((team) => (
                     <DropdownMenuItem
@@ -144,7 +128,7 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
                         onSelect={(event) => event.preventDefault()}
                     >
                         <Plus className={inHeader ? 'size-4' : 'h-4 w-4'} />
-                        <span className="text-muted-foreground">New team</span>
+                        <span className="text-muted-foreground">New store</span>
                     </DropdownMenuItem>
                 </CreateTeamModal>
             </DropdownMenuContent>

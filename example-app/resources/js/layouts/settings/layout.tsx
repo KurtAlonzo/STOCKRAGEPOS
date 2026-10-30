@@ -23,7 +23,7 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'Teams',
+        title: 'Stores',
         href: teams(),
         icon: null,
     },
