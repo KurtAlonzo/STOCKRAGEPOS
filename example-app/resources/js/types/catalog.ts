@@ -5,7 +5,9 @@ import type {
     MinorUnits,
     PageSlice,
     Revision,
+    ContractIssue,
 } from './business';
+import type { InventoryItem } from './inventory';
 export type RecipeComponent = {
     inventoryItemId: number;
     quantity: DecimalQuantity;
@@ -37,17 +39,52 @@ export type CatalogItem = CatalogFields &
               recipeRevision: Revision;
           }
     );
-export type CatalogItemInput = CatalogItem extends infer T
-    ? T extends CatalogItem
-        ? Omit<T, 'id' | 'revision' | 'recipeRevision'>
-        : never
+type Editable = Pick<
+    CatalogFields,
+    'name' | 'sku' | 'categoryId' | 'active' | 'priceMinor' | 'allowedAddonIds'
+>;
+export type CatalogCreateInput = Editable &
+    (
+        | { kind: 'retail'; lowStockThreshold: DecimalQuantity | null }
+        | { kind: 'food'; components: RecipeComponent[] }
+        | {
+              kind: 'addon';
+              stockBehavior: 'direct';
+              lowStockThreshold: DecimalQuantity | null;
+          }
+        | {
+              kind: 'addon';
+              stockBehavior: 'recipe';
+              components: RecipeComponent[];
+          }
+    );
+export type CatalogItemInput = CatalogCreateInput;
+type UpdateInput<T> = T extends CatalogCreateInput
+    ? Omit<T, 'lowStockThreshold'> & { expectedRevision: Revision }
     : never;
+export type CatalogUpdateInput = UpdateInput<CatalogCreateInput>;
+export type CatalogAvailability = {
+    status: 'inactive' | 'available' | 'warning' | 'blocked';
+    stock: InventoryItem | null;
+    issues: ContractIssue[];
+};
+export type CatalogListItem = CatalogItem & {
+    availability: CatalogAvailability;
+};
 export type RecipeInput = {
     expectedRevision: Revision;
     components: RecipeComponent[];
 };
-export type Category = { id: number; name: string; active: boolean };
-export type CategoryInput = Omit<Category, 'id'>;
+export type Category = {
+    id: number;
+    name: string;
+    active: boolean;
+    revision: Revision;
+};
+export type CategoryInput = Pick<Category, 'name' | 'active'>;
+export type CategoryUpdateInput = CategoryInput & {
+    expectedRevision: Revision;
+};
 export type CategoryIndexProps = {
     business: BusinessContext;
     categories: PageSlice<Category>;
@@ -60,7 +97,7 @@ export type CatalogFilters = {
 };
 export type CatalogIndexProps = {
     business: BusinessContext;
-    catalog: PageSlice<CatalogItem>;
+    catalog: PageSlice<CatalogListItem>;
     categories: Category[];
     filters: CatalogFilters;
 };
@@ -68,6 +105,7 @@ export type CatalogEditorProps = {
     business: BusinessContext;
     item: CatalogItem | null;
     categories: Category[];
-    inventory: { id: number; name: string; unit: BaseUnit }[];
+    inventory: { id: number; name: string; unit: BaseUnit; active: boolean }[];
     addons: CatalogItem[];
+    availability: CatalogAvailability | null;
 };

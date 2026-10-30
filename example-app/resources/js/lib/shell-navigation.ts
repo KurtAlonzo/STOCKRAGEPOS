@@ -1,5 +1,8 @@
 import { LayoutGrid, Settings } from 'lucide-react';
 import { dashboard } from '@/routes';
+import { index as inventory } from '@/routes/inventory';
+import { index as products } from '@/routes/products';
+import { index as categories } from '@/routes/categories';
 import { edit } from '@/routes/profile';
 import type { Team, NavItem } from '@/types';
 export function getShellNavItems(team: Team | null): NavItem[] {
@@ -9,6 +12,20 @@ export function getShellNavItems(team: Team | null): NavItem[] {
                   {
                       title: 'Dashboard',
                       href: dashboard(team.slug),
+                      icon: LayoutGrid,
+                  },
+                  {
+                      title: 'Catalog',
+                      href: products(team.slug),
+                      icon: LayoutGrid,
+                      matchPaths: [
+                          products(team.slug).url,
+                          categories(team.slug).url,
+                      ],
+                  },
+                  {
+                      title: 'Inventory',
+                      href: inventory(team.slug),
                       icon: LayoutGrid,
                   },
               ]

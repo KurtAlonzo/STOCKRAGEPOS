@@ -28,9 +28,9 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
     const [switching, setSwitching] = useState(false);
     const switchTeam = (team: Team) => {
         if (switching) return;
-        setSwitching(true);
         router.visit(switchMethod(team.slug), {
             preserveState: false,
+            onStart: () => setSwitching(true),
             onFinish: () => setSwitching(false),
         });
     };

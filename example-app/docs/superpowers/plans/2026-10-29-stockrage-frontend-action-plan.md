@@ -122,14 +122,16 @@ Reuse current form, dialog, button, badge, feedback, and layout patterns. Add sh
 
 ## Task 3: Build catalog, recipes, and minimum stock operations
 
+**Status:** Implemented with local verification on 2026-10-30; see [evidence](../../verification/2026-10-30-task-3-catalog-inventory.md). Full-repository formatting gates retain documented baseline failures.
+
 **Depends on:** Tasks 1–2. **Files:** catalog/inventory pages and components in the work map, corresponding Laravel persistence/actions.
 
-- [ ] Build searchable, filtered, paginated catalog views with explicit retail/food/add-on types, active status, price, and stock/availability indicators. Preserve filters in the URL and distinguish no items from no search results.
-- [ ] Build create/edit forms with reusable fields and type-specific sections. Support categories, SKU uniqueness, name, selling price, and active status; ingredients/supplies are inventory records, not automatically sellable POS tiles.
-- [ ] Build recipe editing with ingredient/supply selection, quantity, base unit, row removal, duplicate-component handling, and inline errors. Food stock status derives from requirements; it must not pretend to be a directly stocked finished quantity.
-- [ ] Attach allowed add-ons to food/product choices with explicit price and stock requirements. Block invalid nesting or recursive recipes in the initial model; defer unit conversions and substitution builders.
-- [ ] Implement opening stock, stock receipt, and reason-required corrections before checkout. Keep products, ingredients, and supplies understandable in inventory filters; show low, zero, and negative balances distinctly.
-- [ ] Connect real persistence one operation at a time, keeping fixture screens useful until each contract is available. Archive/deactivate referenced items rather than deleting historical sale meaning.
+- [x] Build searchable, filtered, paginated catalog views with explicit retail/food/add-on types, active status, price, and stock/availability indicators. Preserve filters in the URL and distinguish no items from no search results.
+- [x] Build create/edit forms with reusable fields and type-specific sections. Support categories, SKU uniqueness, name, selling price, and active status; ingredients/supplies are inventory records, not automatically sellable POS tiles.
+- [x] Build recipe editing with ingredient/supply selection, quantity, base unit, row removal, duplicate-component handling, and inline errors. Food stock status derives from requirements; it must not pretend to be a directly stocked finished quantity.
+- [x] Attach allowed add-ons to food/product choices with explicit price and stock requirements. Block invalid nesting or recursive recipes in the initial model; defer unit conversions and substitution builders.
+- [x] Implement opening stock, stock receipt, and reason-required corrections before checkout. Keep products, ingredients, and supplies understandable in inventory filters; show low, zero, and negative balances distinctly.
+- [x] Connect real persistence one operation at a time, keeping fixture screens useful until each contract is available. Archive/deactivate referenced items rather than deleting historical sale meaning.
 
 **Proof:** create a retail item, ingredient, packaging supply, recipe product, and add-on; receive stock; reload and see persisted values. Verify duplicate SKU, invalid decimal quantities, duplicate recipe entries, inactive items, unsaved edits, and aggregated shared-component demand. Backend tests prove store isolation and append-only movements.
 

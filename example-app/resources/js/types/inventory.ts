@@ -7,15 +7,23 @@ import type {
 } from './business';
 export type InventoryItemInput = {
     name: string;
-    kind: 'retail' | 'ingredient' | 'supply' | 'addon';
+    kind: 'ingredient' | 'supply';
     unit: BaseUnit;
+    active: boolean;
+    lowStockThreshold: DecimalQuantity | null;
 };
-export type InventoryItem = InventoryItemInput & {
+export type InventoryItem = Omit<InventoryItemInput, 'kind'> & {
+    kind: 'retail' | 'ingredient' | 'supply' | 'addon';
     id: number;
     balance: DecimalQuantity;
     revision: Revision;
     shortagePolicy: 'block' | 'warn';
+    stockState: 'positive' | 'zero' | 'negative' | 'low';
 };
+export type InventoryItemUpdateInput = Pick<
+    InventoryItemInput,
+    'name' | 'active' | 'lowStockThreshold'
+> & { expectedRevision: Revision };
 export type StockMovement = {
     id: number;
     inventoryItemId: number;
@@ -48,8 +56,13 @@ export type InventoryIndexProps = {
     filters: {
         query: string;
         kind: InventoryItem['kind'] | null;
-        stockState: 'positive' | 'zero' | 'negative' | null;
+        stockState: InventoryItem['stockState'] | null;
+        active: boolean | null;
     };
+    selectedItem: InventoryItem | null;
+    movements: PageSlice<
+        StockMovement & { itemName: string; actorName: string }
+    > | null;
 };
 export type StockHistoryProps = {
     business: BusinessContext;

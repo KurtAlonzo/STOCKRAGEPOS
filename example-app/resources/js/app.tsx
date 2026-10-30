@@ -6,8 +6,10 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import PosLayout from '@/layouts/pos-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { installHistoryTracking } from '@/lib/navigation-history';
 
 const appName = import.meta.env.VITE_APP_NAME || 'STOCKRAGE POS';
+installHistoryTracking();
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

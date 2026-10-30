@@ -154,3 +154,7 @@ Access the app at [http://localhost:8000](http://localhost:8000) and log in with
 ## Task 2 implementation — 2026-10-30
 Owner provisioning, owner-scoped React entry, truthful navigation, shared branding and responsive shell implemented. See [verification](verification/2026-10-30-task-2-shell.md). Business workflows remain future work; local previews are sample-only.
 
+
+## Task 3 implementation — 2026-10-30
+
+Persisted catalog, categories, recipes, add-ons, inventory metadata, stock receipts/corrections and per-item movement history implemented with owner/store isolation and exact arithmetic. Shared-demand calculations are ready for the cart. Local verification: 120 PHP tests / 523 assertions and 20 frontend tests; TypeScript, PHPStan and build passed. See [verification](verification/2026-10-30-task-3-catalog-inventory.md) for browser checks, baseline formatting failures and database rollout limits. Checkout, payments, sales and dashboard aggregates remain later work.

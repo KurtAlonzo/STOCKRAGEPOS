@@ -87,6 +87,9 @@ export const catalogFixture: CatalogItem[] = [
 export const inventoryFixture: InventoryItem[] = [
     {
         id: 201,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'positive',
         name: 'Water',
         kind: 'retail',
         unit: 'each',
@@ -96,6 +99,9 @@ export const inventoryFixture: InventoryItem[] = [
     },
     {
         id: 202,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'positive',
         name: 'Cheese',
         kind: 'addon',
         unit: 'each',
@@ -105,6 +111,9 @@ export const inventoryFixture: InventoryItem[] = [
     },
     {
         id: 203,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'positive',
         name: 'Beef',
         kind: 'ingredient',
         unit: 'g',
@@ -114,6 +123,9 @@ export const inventoryFixture: InventoryItem[] = [
     },
     {
         id: 204,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'negative',
         name: 'Sauce',
         kind: 'ingredient',
         unit: 'g',
@@ -123,6 +135,9 @@ export const inventoryFixture: InventoryItem[] = [
     },
     {
         id: 205,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'positive',
         name: 'Seasoning',
         kind: 'ingredient',
         unit: 'g',
@@ -132,6 +147,9 @@ export const inventoryFixture: InventoryItem[] = [
     },
     {
         id: 206,
+        active: true,
+        lowStockThreshold: null,
+        stockState: 'positive',
         name: 'Packaging',
         kind: 'supply',
         unit: 'each',

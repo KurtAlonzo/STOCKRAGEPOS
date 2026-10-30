@@ -1,4 +1,22 @@
-# POS v1 contract — development contract, not implemented API
+# POS v1 contract — catalog/inventory integration and future checkout contract
+
+## Task 3 implementation amendments — 2026-10-30
+
+Catalog and inventory use the Task 3 design and exported types below. Checkout, sales, payment, attempt lookup and reversal endpoints remain future work. The endpoint matrix distinguishes the intended release protocol from the implemented Task 3 subset; it does not imply checkout is available.
+
+- Inventory read records add `active`, `lowStockThreshold` (nullable canonical decimal) and `stockState` (`negative/zero/low/positive`). Optional thresholds are in the item's base unit. Negative and zero take precedence; a positive balance at or below a configured threshold is low. Thresholds do not add sale-blocking rules.
+- Public `InventoryItemInput` creates ingredients/supplies only, with `name/kind/unit/active/lowStockThreshold`. Retail/direct add-on records are created automatically and atomically by catalog save, initially at zero. They cannot be shared or selected by a supplied `stockItemId`.
+- Add PATCH `/{current_team}/inventory/items/{inventoryItem}`, name `inventory.items.update`, using `InventoryItemUpdateInput {name,active,lowStockThreshold,expectedRevision}`. Kind/unit are immutable. Product-owned name/active state is synchronized by Catalog; Inventory may edit its threshold only. Metadata writes never accept balances.
+- `CatalogCreateInput`/`CatalogItemInput` carries common name, SKU, category, active, price and allowed add-on IDs. Direct kinds carry nullable `lowStockThreshold`; recipe kinds carry components; add-ons carry `stockBehavior`. `CatalogUpdateInput` replaces editable fields with `expectedRevision`, omitting threshold and stockItemId. Returned CatalogItem retains server-owned stockItemId/revisions. Type and stock behavior are immutable in this release.
+- Category reads add revision; category PATCH uses `CategoryUpdateInput` with expectedRevision. SKU is trimmed uppercase ASCII, unique per store including inactive items. Category names are trimmed and case-insensitively unique per store. Kind/unit/stock behavior cannot be converted by editing.
+- Product and recipe saves are atomic. Dedicated `RecipeInput.expectedRevision` compares the parent catalog revision; component changes advance catalog and recipe revisions. Stale writes preserve browser inputs and return an Inertia `expectedRevision` error. Main product editor saves details, components and allowed add-ons together.
+- Catalog list rows add `CatalogAvailability {status,stock,issues}`. Status is inactive/available/warning/blocked; direct stock is real, recipe warnings project one serving rather than a finished-goods count. Inactive/missing configuration blocks; valid ingredient shortages warn. Optional unselected add-ons do not block their parent.
+- Inventory list filters add `active` and `low` stockState. `itemId` selects a store-scoped read-only movement panel and `movementPage` paginates it. Inventory props add selectedItem and nullable `PageSlice<InventoryMovementRow>`; rows retain StockMovement plus historical itemName/actorName snapshots. Global stock-history filters remain Task 7.
+- Deactivation of a component, add-on or category with active dependents is rejected with affected product names. Inactive parents retain existing links, but cannot introduce new inactive references. Reactivation validates every dependency again. Receipts/adjustments can reconcile inactive stock.
+- Receipts are positive, adjustments nonzero signed deltas with reasons. Direct-stock corrections cannot go negative; ingredient/supply corrections may, with a projected-balance warning. Operations and movements append atomically with a conditional stock revision update. Replaying an old revision cannot post twice; after an uncertain response, refresh balance/history before a new action.
+- Exact thousandths are stored as bounded integers; decimal transport and existing limits remain. The server StockDemand service aggregates shared components without mutating stock. Money remains integer centavos; no tax engine or checkout completion is added.
+
+These amendments supersede the earlier descriptions that derive write payloads directly from returned CatalogItem/InventoryItem and describe all endpoints as unimplemented. The runtime field dictionary is `resources/js/types/{catalog,inventory}.ts`; Task 3 verification is recorded separately.
 
 ## Confirmed interview decisions
 
