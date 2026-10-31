@@ -1,5 +1,18 @@
 # POS v1 contract — catalog/inventory integration and future checkout contract
 
+## Task 4 implementation amendments — 2026-10-31
+
+Order preparation now implements `GET /{current_team}/pos` (`pos.index`), `GET /{current_team}/pos/catalog` (`pos.catalog`) and `POST /{current_team}/pos/quotes` (`pos.quotes.store`). Payment recording, completion, attempt lookup, sales and reversals remain unavailable.
+
+- `StockEffect` adds required `inventoryItemName` so projections remain readable after recipes change. Existing payment/recovery fixtures still describe future Task 5 scenarios; production Task 4 quotes always have null payment/change and reject every non-null payment value.
+- `PosCatalogPage` carries 25-row `catalog`, page-scoped resolved `addons` and `inventory`, `filters {query,categoryId}`, and `hasProducts` before filters. `PosPageProps` adds business context, categories and an empty enabled-payment-method list. Zero-stock direct products remain selectable; structural configuration errors block selection.
+- JSON catalog and quote routes use the trusted `preserve_current_team` route default after owner authorization. Their data always comes from the route store; background requests do not change the selected store.
+- Quotes use exact current catalog/recipe snapshots and named aggregate effects inside the store transaction. Direct shortages are blockers; recipe shortages are warnings. Quoting never changes inventory, revisions, stock operations or movements.
+- An immutable `{input,quote}` envelope is cached for 300 seconds under `pos:quote:{storeId}:{userId}:{quoteId}`. Cache failure returns 503 `quote_unavailable`; eviction/expiry requires a fresh quote. This is not a durable checkout-attempt record and cannot resolve an already confirmed sale.
+- Cart IDs are UUIDs; identity is product plus sorted unique add-ons. Counts are positive whole numbers up to `9007199254740`, bounded by safe money/thousandth arithmetic. Invalid fields retain input and suppress quoting. The browser holds cart state only in memory and guards nonempty navigation.
+
+These implemented routes supersede their proposed status in the historical matrix below. No checkout completion or attempt routes have been added.
+
 ## Task 3 implementation amendments — 2026-10-30
 
 Catalog and inventory use the Task 3 design and exported types below. Checkout, sales, payment, attempt lookup and reversal endpoints remain future work. The endpoint matrix distinguishes the intended release protocol from the implemented Task 3 subset; it does not imply checkout is available.
@@ -102,6 +115,7 @@ Every path is prefixed `/{current_team}`; every action requires an authenticated
 | POST `/inventory/items`                                                 | `InventoryItemInput` -> refreshed inventory                       | Inertia form |
 | POST `/inventory/receipts`; POST `/inventory/adjustments`               | `StockReceiptInput`/`StockAdjustmentInput` -> refreshed inventory | Inertia form |
 | GET `/pos`                                                              | filters -> `PosPageProps`                                         | Inertia      |
+| GET `/pos/catalog`                                                      | query/categoryId/page -> `PosCatalogPage`                         | JSON         |
 | POST `/pos/quotes`                                                      | `CheckoutQuoteInput` -> `CheckoutQuote`                           | JSON         |
 | POST `/pos/checkouts`                                                   | `CheckoutCompletionInput` -> `CheckoutCompletionResult`           | JSON         |
 | GET `/pos/attempts/{idempotencyKey}`                                    | operation key -> `AttemptLookupResult`                            | JSON         |
@@ -114,7 +128,7 @@ Catalog/category removal means archive/deactivate through PATCH. Do not specify 
 
 JSON endpoints return structured errors: { error: ContractError, replacementQuote?: CheckoutQuote }. Quote returns 200; completion returns 200 confirmed or 202 pending; authenticated lookup returns 200 with a discriminated result. Validation returns 422 validation_failed with dotted field paths (e.g. lines.0.quantity); numeric overflow uses numeric_range_exceeded. Expiry/change/stock conflict return 409 quote_expired/quote_changed/stock_conflict with a replacement quote when re-review is possible. Changed-payload replay returns 409 idempotency_conflict. Form endpoints use Inertia validation redirects/error bags, not this JSON envelope. Auth/session failures (401,403,419) and unexpected HTML responses cannot be interpreted as success. Another store's resource returns 404 without exposing its data.
 
-Route names: products.index/create/edit/store/update/recipe.update; categories.index/store/update; inventory.index/items.store/receipts.store/adjustments.store/history; pos.index/quotes.store/checkouts.store/attempts.show; sales.index/show/reversals.store. All are proposed; no working routes or generated helpers are supplied by this contract. Successful form writes redirect to their scoped detail/editor or inventory/category index.
+Route names: products.index/create/edit/store/update/recipe.update; categories.index/store/update; inventory.index/items.store/receipts.store/adjustments.store/history; pos.index/catalog/quotes.store/checkouts.store/attempts.show; sales.index/show/reversals.store. Catalog, inventory management and POS preparation routes have generated helpers. Global history, checkout completion, attempt lookup and sales routes remain proposed. Successful form writes redirect to their scoped detail/editor or inventory/category index.
 
 Inventory starts at zero; opening balances are receipt movements. Retail and directly stocked add-ons use each and block shortages; ingredients/supplies use their configured unit and warn. Recipes may consume ingredient/supply records only, cannot nest other recipes, and cannot repeat a component ID. Add-ons cannot own add-ons. SKU is unique within a store; inactive or foreign-store references are invalid. Receipt quantities and recipe quantities are positive, adjustments signed with a required reason. Counted units cannot be fractional. New business field names are camelCase; lists carry filters plus PageSlice metadata. CatalogItemInput is a full replacement of editable fields on PATCH; kind changes involving existing stock/history must be rejected rather than silently rewriting history.
 

@@ -6,6 +6,7 @@ use App\Models\CatalogItem;
 use App\Models\InventoryItem;
 use App\Models\Team;
 use App\Support\Quantity;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -22,26 +23,48 @@ final class StockDemand
     {
         Validator::make(['lines' => $lines], ['lines' => 'array', 'lines.*.id' => 'required|uuid|distinct', 'lines.*.productId' => 'required|integer', 'lines.*.quantity' => 'required|integer|min:1|max:9007199254740', 'lines.*.addonIds' => 'present|array', 'lines.*.addonIds.*' => 'integer'])->validate();
         $demand = [];
+        $selectedIds = [];
+        foreach ($lines as $line) {
+            $selectedIds[] = (int) $line['productId'];
+            array_push($selectedIds, ...array_map('intval', $line['addonIds']));
+        }
+        $items = CatalogItem::with(['stockItem', 'components.inventoryItem', 'addons'])->where('team_id', $store->id)->whereIn('id', array_unique($selectedIds))->get()->keyBy('id');
+        foreach ($selectedIds as $id) {
+            if (! $items->has($id)) {
+                throw (new ModelNotFoundException)->setModel(CatalogItem::class, [$id]);
+            }
+        }
         foreach ($lines as $i => $line) {
-            $product = CatalogItem::with(['stockItem', 'components.inventoryItem', 'addons'])->where('team_id', $store->id)->whereKey($line['productId'])->firstOrFail();
+            $product = $items[(int) $line['productId']];
             if (! $product->active || $product->kind === 'addon') {
                 throw ValidationException::withMessages(['lines.'.$i.'.productId' => 'Select an active retail or food product.']);
             }
-            $this->add($store, $product, (int) $line['quantity'], $demand);
+            $this->addSelection($store, $product, (int) $line['quantity'], $demand, 'lines.'.$i.'.productId');
             $ids = array_map('intval', $line['addonIds']);
             if (count($ids) !== count(array_unique($ids))) {
                 throw ValidationException::withMessages(['lines.'.$i.'.addonIds' => 'An add-on cannot repeat.']);
             }
             $allowed = $product->addons->modelKeys();
             foreach ($ids as $id) {
-                $addon = CatalogItem::where('team_id', $store->id)->whereKey($id)->firstOrFail();
+                $addon = $items[$id];
                 if (! $addon->active || $addon->kind !== 'addon' || ! in_array($id, $allowed)) {
                     throw ValidationException::withMessages(['lines.'.$i.'.addonIds' => 'Select allowed active add-ons.']);
-                }$this->add($store, $addon, (int) $line['quantity'], $demand);
+                }
+                $this->addSelection($store, $addon, (int) $line['quantity'], $demand, 'lines.'.$i.'.addonIds');
             }
         }
 
         return $this->effects($store, $demand);
+    }
+
+    /** @param array<int, int> $demand */
+    private function addSelection(Team $store, CatalogItem $item, int $count, array &$demand, string $field): void
+    {
+        try {
+            $this->add($store, $item, $count, $demand);
+        } catch (ValidationException $error) {
+            throw ValidationException::withMessages([$field => array_merge(...array_values($error->errors()))]);
+        }
     }
 
     /**
@@ -99,7 +122,7 @@ final class StockDemand
         $effects = [];
         foreach ($demand as $id => $amount) {
             $stock = $this->stocks[$id];
-            $effects[] = ['inventoryItemId' => $id, 'unit' => $stock->unit, 'before' => Quantity::format($stock->balance_thousandths), 'demand' => Quantity::format($amount), 'after' => Quantity::format(Quantity::add($stock->balance_thousandths, -$amount)), 'policy' => in_array($stock->kind, ['retail', 'addon'], true) ? 'block' : 'warn'];
+            $effects[] = ['inventoryItemId' => $id, 'inventoryItemName' => $stock->name, 'unit' => $stock->unit, 'before' => Quantity::format($stock->balance_thousandths), 'demand' => Quantity::format($amount), 'after' => Quantity::format(Quantity::add($stock->balance_thousandths, -$amount)), 'policy' => in_array($stock->kind, ['retail', 'addon'], true) ? 'block' : 'warn'];
         }
 
         return $effects;

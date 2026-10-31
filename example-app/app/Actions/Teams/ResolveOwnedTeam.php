@@ -14,6 +14,6 @@ class ResolveOwnedTeam
             $user->switchTeam($team);
         }
 
-return $team;
+        return $team;
     }
 }

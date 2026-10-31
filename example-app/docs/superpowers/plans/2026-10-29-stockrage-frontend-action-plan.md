@@ -12,21 +12,21 @@
 
 ## Confirmed release decisions
 
-| Decision | Agreed direction |
-| --- | --- |
-| Business | Both directly stocked retail products and recipe-based food products |
-| Delivery | One complete operating workflow before expanding all modules |
-| Frontend/backend | Frontend-led work with agreed data contracts and incremental backend integration |
-| Shortages | Block directly stocked retail shortages; warn and permit negative recipe ingredient/supply stock |
-| Payments | Record payments received outside the app; no payment-provider processing |
-| Operator | Owner only initially; staff workflows and granular POS roles deferred |
-| Product types | Direct-stock retail, recipe-based food, and add-ons attached to individual cart lines |
-| Devices | Desktop/tablet checkout; phone management and sales review |
-| Recovery | Recover drafts by store; require connection for completion; reconcile uncertain submissions before retrying |
-| Visuals | Preserve mockup identity and workflows; adapt layouts using existing React components |
-| Corrections | Preserve original sales; linked reversal/refund with reason; retail restock only when restockable; no automatic ingredient restoration |
-| Receipts | On-screen sale confirmation; optional A5 browser printing/Save as PDF |
-| Scheduling | Dependency-ordered milestones and completion criteria before calendar estimates |
+| Decision         | Agreed direction                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Business         | Both directly stocked retail products and recipe-based food products                                                                   |
+| Delivery         | One complete operating workflow before expanding all modules                                                                           |
+| Frontend/backend | Frontend-led work with agreed data contracts and incremental backend integration                                                       |
+| Shortages        | Block directly stocked retail shortages; warn and permit negative recipe ingredient/supply stock                                       |
+| Payments         | Record payments received outside the app; no payment-provider processing                                                               |
+| Operator         | Owner only initially; staff workflows and granular POS roles deferred                                                                  |
+| Product types    | Direct-stock retail, recipe-based food, and add-ons attached to individual cart lines                                                  |
+| Devices          | Desktop/tablet checkout; phone management and sales review                                                                             |
+| Recovery         | Recover drafts by store; require connection for completion; reconcile uncertain submissions before retrying                            |
+| Visuals          | Preserve mockup identity and workflows; adapt layouts using existing React components                                                  |
+| Corrections      | Preserve original sales; linked reversal/refund with reason; retail restock only when restockable; no automatic ingredient restoration |
+| Receipts         | On-screen sale confirmation; optional A5 browser printing/Save as PDF                                                                  |
+| Scheduling       | Dependency-ordered milestones and completion criteria before calendar estimates                                                        |
 
 ## Evidence and current baseline
 
@@ -75,18 +75,18 @@ The schema and cart must accommodate the selected payment methods without implyi
 
 Paths below are relative to `example-app/`. These are proposed boundaries, not files that already exist.
 
-| Responsibility | Main files |
-| --- | --- |
-| Shell, navigation, branding | Modify `resources/js/components/app-sidebar.tsx`, `nav-main.tsx`, `team-switcher.tsx`, `app-logo.tsx`, `resources/js/app.tsx`, `resources/css/app.css`, `vite.config.ts` |
-| Entry and account experience | Modify `resources/js/pages/welcome.tsx`, existing auth layouts, and settings navigation |
-| Shared business types | Create `resources/js/types/pos.ts`, `catalog.ts`, `inventory.ts`, `sales.ts` as each workflow needs them |
-| Catalog | Create `resources/js/pages/products/index.tsx`, `create.tsx`, `edit.tsx`, `pages/categories/index.tsx`, `components/catalog/item-form.tsx`, `recipe-editor.tsx` |
-| Inventory | Create `resources/js/pages/inventory/index.tsx`, `history.tsx`, `components/inventory/stock-adjustment-dialog.tsx` |
-| Checkout | Create `resources/js/pages/pos/index.tsx`, `layouts/pos-layout.tsx`, `components/pos/product-picker.tsx`, `cart-panel.tsx`, `addon-picker.tsx`, `payment-panel.tsx` |
-| Draft and calculations | Create `resources/js/hooks/use-pos-draft.ts`, `resources/js/lib/pos/cart.ts`, `draft-storage.ts`; colocate focused tests |
-| Sales and corrections | Create `resources/js/pages/sales/index.tsx`, `show.tsx`, `components/sales/correction-dialog.tsx`, `receipt.tsx` |
-| Dashboard and settings | Modify `resources/js/pages/dashboard.tsx`; create `resources/js/pages/settings/business.tsx` |
-| Backend contracts/integration | Add team-scoped routes/controllers/requests/services/models/migrations for these workflows; extend middleware shared props only when required |
+| Responsibility                | Main files                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shell, navigation, branding   | Modify `resources/js/components/app-sidebar.tsx`, `nav-main.tsx`, `team-switcher.tsx`, `app-logo.tsx`, `resources/js/app.tsx`, `resources/css/app.css`, `vite.config.ts` |
+| Entry and account experience  | Modify `resources/js/pages/welcome.tsx`, existing auth layouts, and settings navigation                                                                                  |
+| Shared business types         | Create `resources/js/types/pos.ts`, `catalog.ts`, `inventory.ts`, `sales.ts` as each workflow needs them                                                                 |
+| Catalog                       | Create `resources/js/pages/products/index.tsx`, `create.tsx`, `edit.tsx`, `pages/categories/index.tsx`, `components/catalog/item-form.tsx`, `recipe-editor.tsx`          |
+| Inventory                     | Create `resources/js/pages/inventory/index.tsx`, `history.tsx`, `components/inventory/stock-adjustment-dialog.tsx`                                                       |
+| Checkout                      | Create `resources/js/pages/pos/index.tsx`, `layouts/pos-layout.tsx`, `components/pos/product-picker.tsx`, `cart-panel.tsx`, `addon-picker.tsx`, `payment-panel.tsx`      |
+| Draft and calculations        | Create `resources/js/hooks/use-pos-draft.ts`, `resources/js/lib/pos/cart.ts`, `draft-storage.ts`; colocate focused tests                                                 |
+| Sales and corrections         | Create `resources/js/pages/sales/index.tsx`, `show.tsx`, `components/sales/correction-dialog.tsx`, `receipt.tsx`                                                         |
+| Dashboard and settings        | Modify `resources/js/pages/dashboard.tsx`; create `resources/js/pages/settings/business.tsx`                                                                             |
+| Backend contracts/integration | Add team-scoped routes/controllers/requests/services/models/migrations for these workflows; extend middleware shared props only when required                            |
 
 Reuse current form, dialog, button, badge, feedback, and layout patterns. Add shared table/filter/form pieces only as real consumers appear. Keep checkout components separate from management page layouts.
 
@@ -217,4 +217,3 @@ After the initial workflow is verified, prioritize from actual owner usage: purc
 Start with Task 1's stock/payment/attempt contracts and a small fixture set, followed by Task 2's truthful navigation and branded shell. Then build Task 3's one retail item, one recipe product, one add-on, and their required stock records. Do not begin by drawing all 13 module pages or polishing dashboard charts.
 
 Task 2 implementation (2026-10-30): shell delivered with local verification; see [evidence](../../verification/2026-10-30-task-2-shell.md). Deployment email and physical-device checks remain.
-

@@ -210,6 +210,7 @@ const snapshots: SaleLineSnapshot[] = lines.map((line) => {
 const stockEffects: StockEffect[] = [
     {
         inventoryItemId: 201,
+        inventoryItemName: 'Water',
         unit: 'each',
         before: '2.000',
         demand: '1.000',
@@ -218,6 +219,7 @@ const stockEffects: StockEffect[] = [
     },
     {
         inventoryItemId: 202,
+        inventoryItemName: 'Cheese',
         unit: 'each',
         before: '3.000',
         demand: '2.000',
@@ -226,6 +228,7 @@ const stockEffects: StockEffect[] = [
     },
     {
         inventoryItemId: 203,
+        inventoryItemName: 'Beef',
         unit: 'g',
         before: '250.000',
         demand: '350.000',
@@ -234,6 +237,7 @@ const stockEffects: StockEffect[] = [
     },
     {
         inventoryItemId: 204,
+        inventoryItemName: 'Sauce',
         unit: 'g',
         before: '-5.000',
         demand: '30.000',
@@ -242,6 +246,7 @@ const stockEffects: StockEffect[] = [
     },
     {
         inventoryItemId: 205,
+        inventoryItemName: 'Seasoning',
         unit: 'g',
         before: '1.000',
         demand: '0.375',
@@ -250,6 +255,7 @@ const stockEffects: StockEffect[] = [
     },
     {
         inventoryItemId: 206,
+        inventoryItemName: 'Packaging',
         unit: 'each',
         before: '2.000',
         demand: '3.000',

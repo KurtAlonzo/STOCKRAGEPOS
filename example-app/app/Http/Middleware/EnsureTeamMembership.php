@@ -24,6 +24,9 @@ class EnsureTeamMembership
 
         $this->ensureTeamMemberHasRequiredRole($user, $team, $minimumRole);
 
+        if (($request->route()->defaults['preserve_current_team'] ?? false) === true) {
+            return $next($request);
+        }
         if ($request->route('current_team') && ! $user->isCurrentTeam($team)) {
             $user->switchTeam($team);
         }

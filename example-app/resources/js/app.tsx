@@ -15,6 +15,9 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'pos/index':
+                return ({ children }: { children: React.ReactNode }) =>
+                    children;
             case name === 'dev/pos-shell':
                 return ({ children }: { children: React.ReactNode }) => (
                     <PosLayout

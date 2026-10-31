@@ -13,7 +13,7 @@ test('only exposes working owner destinations', () => {
             role: 'owner',
             isPersonal: true,
         }).map((item) => item.title),
-    ).toEqual(['Dashboard', 'Catalog', 'Inventory', 'Settings']);
+    ).toEqual(['Dashboard', 'POS', 'Catalog', 'Inventory', 'Settings']);
 });
 test('selects the most specific destination', () => {
     expect(

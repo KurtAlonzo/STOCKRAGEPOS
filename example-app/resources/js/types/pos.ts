@@ -6,7 +6,7 @@ import type {
     PageSlice,
     Revision,
 } from './business';
-import type { CatalogItem, Category } from './catalog';
+import type { CatalogListItem, Category } from './catalog';
 import type { InventoryItem } from './inventory';
 import type { PaymentInput, Sale, SaleLineSnapshot } from './sales';
 export type CartLine = {
@@ -21,6 +21,7 @@ export type CheckoutQuoteInput = {
 };
 export type StockEffect = {
     inventoryItemId: number;
+    inventoryItemName: string;
     unit: InventoryItem['unit'];
     before: DecimalQuantity;
     demand: DecimalQuantity;
@@ -80,9 +81,16 @@ export type CheckoutErrorResponse = {
     error: ContractError;
     replacementQuote?: CheckoutQuote;
 };
-export type PosPageProps = {
+export type PosCatalogFilters = { query: string; categoryId: number | null };
+export type PosCatalogPage = {
+    catalog: PageSlice<CatalogListItem>;
+    addons: CatalogListItem[];
+    inventory: InventoryItem[];
+    filters: PosCatalogFilters;
+    hasProducts: boolean;
+};
+export type PosPageProps = PosCatalogPage & {
     business: BusinessContext;
-    catalog: PageSlice<CatalogItem>;
     categories: Category[];
     enabledPaymentMethods: PaymentInput['method'][];
 };

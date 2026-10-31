@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntryController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\StockOperationController;
@@ -18,6 +19,9 @@ Route::get('/dashboard', EntryController::class)->name('entry');
 Route::inertia('/no-store-access', 'no-store-access')->middleware('auth')->name('no-store-access');
 Route::prefix('{current_team}')->middleware(['auth', 'verified', EnsureTeamMembership::class.':owner'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+    Route::get('pos/catalog', [PosController::class, 'catalog'])->defaults('preserve_current_team', true)->name('pos.catalog');
+    Route::post('pos/quotes', [PosController::class, 'quote'])->defaults('preserve_current_team', true)->name('pos.quotes.store');
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
     Route::get('products/create', [ProductController::class, 'create'])->name('products.create');
     Route::get('products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');

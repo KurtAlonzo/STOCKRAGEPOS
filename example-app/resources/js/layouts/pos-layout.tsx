@@ -15,11 +15,13 @@ export default function PosLayout({
     cart,
     summary,
     footer,
+    header,
 }: {
     picker: ReactNode;
     cart: ReactNode;
     summary: ReactNode;
     footer: ReactNode;
+    header?: ReactNode;
 }) {
     const viewport = useCheckoutViewport();
     const { currentTeam } = usePage().props;
@@ -39,11 +41,11 @@ export default function PosLayout({
         );
     return (
         <div className="flex h-dvh flex-col">
-            <header className="border-b p-4">
-                STOCKRAGE · Development preview — sample data
+            <header className="shrink-0 border-b p-4">
+                {header ?? 'STOCKRAGE · Development preview — sample data'}
             </header>
             <div className="grid min-h-0 flex-1 lg:grid-cols-[1fr_24rem]">
-                <main className="overflow-y-auto p-6">{picker}</main>
+                <main className="min-w-0 overflow-y-auto p-6">{picker}</main>
                 {viewport === 'wide' ? (
                     <aside className="flex min-h-0 flex-col border-l">
                         <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -56,8 +58,10 @@ export default function PosLayout({
                         <SheetTrigger asChild>
                             <Button className="m-4 min-h-11">{summary}</Button>
                         </SheetTrigger>
-                        <SheetContent className="flex flex-col">
-                            <SheetTitle>Cart preview</SheetTitle>
+                        <SheetContent className="flex w-full flex-col p-6 sm:max-w-lg">
+                            <SheetTitle>
+                                {header ? 'Cart' : 'Cart preview'}
+                            </SheetTitle>
                             <div className="min-h-0 flex-1 overflow-y-auto">
                                 {cart}
                             </div>
