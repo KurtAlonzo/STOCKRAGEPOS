@@ -1,3 +1,4 @@
+import { clearPosMemory } from '@/lib/pos/auth-scope';
 import { Link, router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
 import {
@@ -20,6 +21,7 @@ export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
+        clearPosMemory(user.id);
         cleanup();
         router.flushAll();
     };

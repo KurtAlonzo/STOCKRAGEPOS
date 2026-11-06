@@ -1,5 +1,6 @@
+import { clearPosMemory } from '@/lib/pos/auth-scope';
 // Components
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -7,6 +8,7 @@ import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
 export default function VerifyEmail({ status }: { status?: string }) {
+    const { auth } = usePage().props;
     return (
         <>
             <Head title="Email verification" />
@@ -28,6 +30,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
                         <TextLink
                             href={logout()}
+                            onClick={() => clearPosMemory(auth.user.id)}
                             className="mx-auto block text-sm"
                         >
                             Log out
