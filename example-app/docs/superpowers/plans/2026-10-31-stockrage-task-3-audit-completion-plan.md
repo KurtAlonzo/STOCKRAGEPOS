@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to execute this plan task-by-task. Use superpowers:subagent-driven-development only when delegation is selected. Steps use checkbox syntax for tracking. This document authorizes planning, not product implementation.
 
+**Execution status (2026-11-02):** Development-readiness audit completed; see [current evidence](../../verification/2026-10-31-task-3-readiness-audit.md). Browser-tool and release limitations are recorded there; unchecked historical substeps must be read alongside that evidence, not as a claim that every supplementary scenario ran.
+
 **Goal:** Establish that the existing catalog, recipes, add-ons, and minimum stock operations are ready for Task 4 development, with current evidence and passing repository checks.
 
 **Architecture:** Audit the existing Laravel/Inertia/React implementation against its accepted contracts. Extend meaningful regression coverage, fix only reproduced defects, and verify the owner workflow in a disposable SQLite preview. Preserve the current service and page boundaries.

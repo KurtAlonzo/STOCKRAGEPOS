@@ -102,6 +102,14 @@ class StockDemandTest extends TestCase
         }
         $local->addons()->attach($addon);
         $addon->update(['active' => false]);
+        $before = InventoryItem::all()->toArray();
+        try {
+            (new StockDemand)->calculate($user->currentTeam, [[...$line, 'addonIds' => [$addon->id]]]);
+            $this->fail('Inactive allowed add-on accepted for active parent');
+        } catch (ValidationException $error) {
+            $this->assertArrayHasKey('lines.0.addonIds', $error->errors());
+        }
+        $this->assertSame($before, InventoryItem::all()->toArray());
         $local->update(['active' => false]);
         foreach ([$line, [...$line, 'addonIds' => [$addon->id]]] as $invalid) {
             try {
@@ -161,6 +169,9 @@ class StockDemandTest extends TestCase
             } catch (ValidationException $error) {
                 $this->assertNotEmpty($error->errors());
             }
+            $this->assertSame($before, InventoryItem::all()->toArray());
+            $this->assertDatabaseCount('stock_operations', 0);
+            $this->assertDatabaseCount('stock_movements', 0);
         }
         try {
             (new StockDemand)->calculate($user->currentTeam, [$line, $line]);
@@ -169,6 +180,7 @@ class StockDemandTest extends TestCase
             $this->assertNotEmpty($error->errors());
         }
         $this->assertSame($before, InventoryItem::all()->toArray());
+        $this->assertDatabaseCount('stock_operations', 0);
         $this->assertDatabaseCount('stock_movements', 0);
     }
 

@@ -72,7 +72,10 @@ export default function CartLines({
                             </p>
                         )}
                         <div className="flex flex-wrap gap-2">
-                            {!!product?.allowedAddonIds.length && (
+                            {!!(
+                                product?.allowedAddonIds.length ||
+                                line.addonIds.length
+                            ) && (
                                 <Button
                                     className="min-h-11"
                                     variant="outline"

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CatalogItem, CatalogListItem } from '@/types';
 import { Button } from '@/components/ui/button';
+import { formatPriceMinor } from '@/lib/catalog/form-values';
 import {
     Dialog,
     DialogContent,
@@ -29,50 +30,53 @@ export default function AddonDialog({
                 if (!open) close();
             }}
         >
-            <DialogContent className="max-h-[85dvh] overflow-y-auto [&_[data-slot=dialog-close]]:min-h-11">
+            <DialogContent className="max-h-[85dvh] overflow-y-auto [&>button]:min-h-11 [&>button]:min-w-11">
                 <DialogTitle>Add-ons · {product.name}</DialogTitle>
                 <DialogDescription>
                     Each selection applies once per product unit. Leave all
                     unchecked for no add-ons.
                 </DialogDescription>
-                {product.allowedAddonIds.map((id) => {
-                    const addon = addons.find((x) => x.id === id);
-                    const unavailable =
-                        !addon?.active ||
-                        addon.availability.issues.some(
-                            (x) => x.code === 'invalid_configuration',
+                {[...new Set([...product.allowedAddonIds, ...selected])].map(
+                    (id) => {
+                        const addon = addons.find((x) => x.id === id);
+                        const unavailable =
+                            !product.allowedAddonIds.includes(id) ||
+                            !addon?.active ||
+                            addon.availability.issues.some(
+                                (x) => x.code === 'invalid_configuration',
+                            );
+                        return (
+                            <label
+                                key={id}
+                                className="flex min-h-11 items-start gap-3 rounded border p-3"
+                            >
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 size-5"
+                                    checked={ids.includes(id)}
+                                    disabled={unavailable && !ids.includes(id)}
+                                    onChange={(e) =>
+                                        setIds(
+                                            e.target.checked
+                                                ? [...ids, id]
+                                                : ids.filter((x) => x !== id),
+                                        )
+                                    }
+                                />
+                                <span className="min-w-0 break-words">
+                                    {addon?.name ?? 'Unavailable add-on'}{' '}
+                                    {addon &&
+                                        `· PHP ${formatPriceMinor(addon.priceMinor)}`}
+                                    {unavailable && (
+                                        <span className="block text-sm text-destructive">
+                                            Unavailable — remove this selection.
+                                        </span>
+                                    )}
+                                </span>
+                            </label>
                         );
-                    return (
-                        <label
-                            key={id}
-                            className="flex min-h-11 items-start gap-3 rounded border p-3"
-                        >
-                            <input
-                                type="checkbox"
-                                className="mt-1 size-5"
-                                checked={ids.includes(id)}
-                                disabled={unavailable && !ids.includes(id)}
-                                onChange={(e) =>
-                                    setIds(
-                                        e.target.checked
-                                            ? [...ids, id]
-                                            : ids.filter((x) => x !== id),
-                                    )
-                                }
-                            />
-                            <span className="min-w-0 break-words">
-                                {addon?.name ?? 'Unavailable add-on'}{' '}
-                                {addon &&
-                                    `· PHP ${(addon.priceMinor / 100).toFixed(2)}`}
-                                {unavailable && (
-                                    <span className="block text-sm text-destructive">
-                                        Unavailable — remove this selection.
-                                    </span>
-                                )}
-                            </span>
-                        </label>
-                    );
-                })}
+                    },
+                )}
                 <DialogFooter>
                     <Button
                         variant="outline"

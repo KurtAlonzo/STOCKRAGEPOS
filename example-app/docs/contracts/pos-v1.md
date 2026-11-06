@@ -179,3 +179,15 @@ User confirmed business-rule agreement on 2026-10-30. Task 1 is contract-ready f
 - Repository-wide npm run check: blocked by pre-existing formatting outside this package (see execution ledger).
 - Fresh review completed; all four important findings corrected and covered. No deferred review findings.
 - Backend acceptance remains unchecked. Tax remains a live-use blocker. User agreement recorded on 2026-10-30; parent Task 1 is complete at the contract level.
+
+## Task 5 payment and recovery protocol
+
+POS JSON requests (catalog, draft-catalog, quotes, checkouts and attempt lookup) require `X-POS-Actor-Id` equal to the authenticated user. Authentication, verification and store-owner authorization run first. Missing/mismatched actors receive 409 `session_changed` without operation writes. Success and business errors echo `X-POS-Actor-Id` and `X-POS-Store-Id`; clients must validate both before accepting results. These headers are preconditions, never credentials.
+
+`config/pos.php` enables cash, GCash and Maya by default, with `store_payment_methods[storeId]` overrides. Preparation quotes accept null payment; final quotes validate tender or confirmed external receipt. References trim to null when blank and are optional. Exact case-sensitive duplicates within store/provider, including reversed sales, warn rather than enforce uniqueness. Cash receivedMinor equals the sale total; tender remains in input and change is separate.
+
+POST `/{store}/pos/draft-catalog` resolves selected lines independently of picker pagination, retaining inactive store records and generic issues for missing/foreign/removed selections. It never changes stock or reveals foreign records. Final review compares immutable item/add-on/recipe, money, payment and warning content; fresh quote IDs and harmless positive stock changes alone do not require renewed review.
+
+POST `/{store}/pos/checkouts` registers a durable actor/store/key-scoped canonical request, then atomically posts one sale, one payment, and one operation/movement per aggregated stock item. 200 confirms; 202 remains pending. GET `/{store}/pos/attempts/{key}` returns not_found/pending/confirmed/rejected without writes. Confirmed/rejected replay precedes quote-cache checks. A changed fingerprint returns idempotency_conflict. Rejections preserve the original key; only definitive rejection permits new review and a new operation. Transient database/cache errors preserve pending.
+
+Browser drafts use IndexedDB with atomic revision/owner-epoch checks. Only explicit takeover changes editors; pending/unknown requests cannot be taken over or discarded. Unsubmitted payment stays in memory. The exact request is saved before POST; uncertainty retains it for explicit same-key retry and bounded GET reconciliation. Confirmation becomes a durable key/sale marker before New Sale. A verified sale whose marker write fails is shown honestly with New Sale disabled. No provider integration, receipt route, tax engine or offline completion is implied.

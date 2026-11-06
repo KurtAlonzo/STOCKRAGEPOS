@@ -171,3 +171,13 @@ Owner provisioning, owner-scoped React entry, truthful navigation, shared brandi
 ## Task 3 implementation — 2026-10-30
 
 Persisted catalog, categories, recipes, add-ons, inventory metadata, stock receipts/corrections and per-item movement history implemented with owner/store isolation and exact arithmetic. Shared-demand calculations are ready for the cart. Local verification: 120 PHP tests / 523 assertions and 20 frontend tests; TypeScript, PHPStan and build passed. See [verification](verification/2026-10-30-task-3-catalog-inventory.md) for browser checks, baseline formatting failures and database rollout limits. Checkout, payments, sales and dashboard aggregates remain later work.
+
+## Current implementation — 2026-11-02
+
+This section supersedes the October 29 starter-state descriptions above (including absent-route navigation, the Blade preview path and mock dashboard figures).
+
+Tasks 1–3 provide agreed contracts, the owner-only branded shell, persisted catalog/categories/recipes/add-ons and exact stock receipt/correction history. The [Task 3 readiness audit](verification/2026-10-31-task-3-readiness-audit.md) completes the follow-up audit and clears the historical formatting exemptions.
+
+Task 4 now provides the integrated mixed cart, live filtered/paginated picker, authoritative store/actor-scoped quotes, named aggregate projections, direct-shortage blocking, recipe warnings, responsive checkout shell and dirty navigation protection. Independent review fixes exact large-price display, removed-modifier repair, invalid-quantity merge retention and portrait close-target sizing. See [verification and Task 5 handoff](verification/2026-10-31-task-4-mixed-cart.md) for current checks, screenshots and limits.
+
+Next is Task 5: durable user/store drafts, tab conflicts, payment entry, final quote acknowledgment, atomic completion, idempotency/attempt lookup and uncertain-result recovery. Payments remain unavailable; sales/refunds, global stock history, real dashboard aggregates and business settings remain future tasks. Live-sales/deployment readiness is not claimed.

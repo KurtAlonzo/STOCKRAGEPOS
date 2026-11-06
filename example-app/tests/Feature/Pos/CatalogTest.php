@@ -28,7 +28,7 @@ class CatalogTest extends TestCase
         $user->switchTeam($selected);
         $url = '/'.$store->slug.'/pos';
         DB::enableQueryLog();
-        $this->actingAs($user)->getJson($url.'/catalog')->assertOk()->assertJsonCount(25, 'catalog.data')->assertJsonCount(25, 'inventory')->assertJsonPath('catalog.total', 26)->assertJsonPath('hasProducts', true);
+        $this->withHeader('X-POS-Actor-Id', (string) $user->id)->actingAs($user)->getJson($url.'/catalog')->assertOk()->assertJsonCount(25, 'catalog.data')->assertJsonCount(25, 'inventory')->assertJsonPath('catalog.total', 26)->assertJsonPath('hasProducts', true);
         $queries = collect(DB::getQueryLog())->filter(fn ($q) => preg_match('/inventory_items|recipe_components|catalog_allowed_addons|catalog_items/', $q['query']));
         DB::disableQueryLog();
         $this->assertLessThanOrEqual(15, $queries->count());

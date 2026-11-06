@@ -122,7 +122,7 @@ Reuse current form, dialog, button, badge, feedback, and layout patterns. Add sh
 
 ## Task 3: Build catalog, recipes, and minimum stock operations
 
-**Status:** Implemented with local verification on 2026-10-30; see [evidence](../../verification/2026-10-30-task-3-catalog-inventory.md). Full-repository formatting gates retain documented baseline failures.
+**Status:** Implemented; development-readiness audit completed 2026-11-02. See [current audit](../../verification/2026-10-31-task-3-readiness-audit.md) and [historical evidence](../../verification/2026-10-30-task-3-catalog-inventory.md).
 
 **Depends on:** Tasks 1–2. **Files:** catalog/inventory pages and components in the work map, corresponding Laravel persistence/actions.
 
@@ -137,13 +137,15 @@ Reuse current form, dialog, button, badge, feedback, and layout patterns. Add sh
 
 ## Task 4: Build the mixed retail/food cart
 
+**Status:** Implemented and locally verified 2026-11-02 for cart preparation; [evidence and Task 5 handoff](../../verification/2026-10-31-task-4-mixed-cart.md). Physical-device/release checks remain separate.
+
 **Depends on:** Task 3 catalog and stock contract. **Files:** checkout layout, picker, add-on picker, cart panel, `lib/pos/cart.ts`, focused cart tests.
 
-- [ ] Build name/SKU search and category filters with keyboard-accessible product choices. Show useful availability without turning every low ingredient into an unavailable product.
-- [ ] Add retail and food products to the same cart. Configure add-ons per line; merge only identical product/modifier configurations. Support quantity edits, line removal, and explicit cart cancellation.
-- [ ] Keep order totals and the payment action visible on desktop and tablet. Make search, quantity controls, dialogs, and scrolling usable with touch and on-screen keyboards.
-- [ ] Show projected aggregate stock effects: direct retail shortages block; recipe ingredients/supplies warn and may become negative. Give the owner the affected item and projected balance rather than a generic warning.
-- [ ] Compute immediate display totals from agreed money units, then replace them with server-authoritative quote results. Do not introduce discounts, split payments, or a new tax engine as incidental cart work.
+- [x] Build name/SKU search and category filters with keyboard-accessible product choices. Show useful availability without turning every low ingredient into an unavailable product.
+- [x] Add retail and food products to the same cart. Configure add-ons per line; merge only identical product/modifier configurations. Support quantity edits, line removal, and explicit cart cancellation.
+- [x] Keep order totals and the payment action visible on desktop and tablet. Make search, quantity controls, dialogs, and scrolling usable with touch and on-screen keyboards.
+- [x] Show projected aggregate stock effects: direct retail shortages block; recipe ingredients/supplies warn and may become negative. Give the owner the affected item and projected balance rather than a generic warning.
+- [x] Compute immediate display totals from agreed money units, then replace them with server-authoritative quote results. Do not introduce discounts, split payments, or a new tax engine as incidental cart work.
 
 **Proof:** a mixed basket containing two food lines with different add-ons retains the correct configuration, totals, and deductions. Focused tests cover line identity, quantity/removal, currency arithmetic, shared ingredient aggregation, and direct-stock shortage boundaries. Keyboard-only and tablet use can complete cart preparation.
 

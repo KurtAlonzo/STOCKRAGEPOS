@@ -20,7 +20,7 @@ class QuoteTest extends TestCase
         $user = User::factory()->create();
         $water = (new SaveCatalogItem)->handle($user->currentTeam, $user, ['name' => 'Water', 'sku' => 'W', 'kind' => 'retail', 'priceMinor' => 5000, 'categoryId' => null, 'active' => true, 'allowedAddonIds' => [], 'lowStockThreshold' => null]);
         Cache::shouldReceive('add')->once()->andReturn(false);
-        $this->actingAs($user)->postJson('/'.$user->currentTeam->slug.'/pos/quotes', ['lines' => [['id' => '11111111-1111-4111-8111-111111111111', 'productId' => $water->id, 'quantity' => 1, 'addonIds' => []]], 'payment' => null])->assertStatus(503)->assertJsonPath('error.code', 'quote_unavailable')->assertJsonMissingPath('id');
+        $this->withHeader('X-POS-Actor-Id', (string) $user->id)->actingAs($user)->postJson('/'.$user->currentTeam->slug.'/pos/quotes', ['lines' => [['id' => '11111111-1111-4111-8111-111111111111', 'productId' => $water->id, 'quantity' => 1, 'addonIds' => []]], 'payment' => null])->assertStatus(503)->assertJsonPath('error.code', 'quote_unavailable')->assertJsonMissingPath('id');
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
@@ -35,7 +35,7 @@ class QuoteTest extends TestCase
         $before = InventoryItem::all()->toArray();
         $line = ['id' => '11111111-1111-4111-8111-111111111111', 'productId' => $water->id, 'quantity' => 3, 'addonIds' => []];
         $url = '/'.$store->slug.'/pos/quotes';
-        $quote = $this->actingAs($user)->postJson($url, ['lines' => [$line], 'payment' => null, 'totalMinor' => 1])->assertOk()->assertJsonPath('totalMinor', 15000)->assertJsonPath('payment', null)->assertJsonPath('stockEffects.0.after', '-1.000')->assertJsonPath('stockEffects.0.inventoryItemName', 'Water')->assertJsonCount(1, 'blockingIssues')->json();
+        $quote = $this->withHeader('X-POS-Actor-Id', (string) $user->id)->actingAs($user)->postJson($url, ['lines' => [$line], 'payment' => null, 'totalMinor' => 1])->assertOk()->assertJsonPath('totalMinor', 15000)->assertJsonPath('payment', null)->assertJsonPath('stockEffects.0.after', '-1.000')->assertJsonPath('stockEffects.0.inventoryItemName', 'Water')->assertJsonCount(1, 'blockingIssues')->json();
         $this->assertSame($selected->id, $user->fresh()->current_team_id);
         $this->assertSame($before, InventoryItem::all()->toArray());
         $this->assertDatabaseCount('stock_operations', 0);
@@ -45,12 +45,17 @@ class QuoteTest extends TestCase
         $other = User::factory()->create();
         $this->assertNull($cache->get($store, $other, $quote['id']));
         $this->assertNull($cache->get($selected, $user, $quote['id']));
-        $this->travel(301)->seconds();
+        Cache::forget('pos:quote:'.$store->id.':'.$user->id.':'.$quote['id']);
         $this->assertNull($cache->get($store, $user, $quote['id']));
+        $replacement = $this->postJson($url, ['lines' => [$line], 'payment' => null])->assertOk()->json();
+        $this->assertNotSame($quote['id'], $replacement['id']);
+        $this->assertNotNull($cache->get($store, $user, $replacement['id']));
+        $this->travel(301)->seconds();
+        $this->assertNull($cache->get($store, $user, $replacement['id']));
         $this->travelBack();
         $water->update(['price_minor' => 11000]);
         $this->postJson($url, ['lines' => [$line], 'payment' => null])->assertOk()->assertJsonPath('totalMinor', 33000);
-        foreach ([['lines' => [], 'payment' => null], ['lines' => [$line, $line], 'payment' => null], ['lines' => [[...$line, 'quantity' => 0]], 'payment' => null], ['lines' => [$line], 'payment' => ['method' => 'cash', 'tenderedMinor' => 50000]]] as $input) {
+        foreach ([['lines' => [], 'payment' => null], ['lines' => [$line, $line], 'payment' => null], ['lines' => [[...$line, 'quantity' => 0]], 'payment' => null]] as $input) {
             $this->postJson($url, $input)->assertUnprocessable()->assertJsonStructure(['error' => ['code', 'message', 'fieldErrors', 'issues']]);
         }
         $this->postJson($url, ['lines' => [[...$line, 'quantity' => 9007199254740]], 'payment' => null])->assertUnprocessable()->assertJsonPath('error.code', 'numeric_range_exceeded');
@@ -81,13 +86,15 @@ class QuoteTest extends TestCase
         $lines = [['id' => '11111111-1111-4111-8111-111111111111', 'productId' => $water->id, 'quantity' => 1, 'addonIds' => []], ['id' => '22222222-2222-4222-8222-222222222222', 'productId' => $burger->id, 'quantity' => 2, 'addonIds' => [$cheese->id]], ['id' => '33333333-3333-4333-8333-333333333333', 'productId' => $burger->id, 'quantity' => 1, 'addonIds' => [$extra->id]]];
         $before = InventoryItem::all()->toArray();
         $url = '/'.$store->slug.'/pos/quotes';
-        $quote = $this->actingAs($u)->postJson($url, ['lines' => $lines, 'payment' => null])->assertOk()->assertJsonPath('totalMinor', 41000)->assertJsonCount(0, 'blockingIssues')->assertJsonCount(3, 'warnings')->json();
+        $quote = $this->withHeader('X-POS-Actor-Id', (string) $u->id)->actingAs($u)->postJson($url, ['lines' => $lines, 'payment' => null])->assertOk()->assertJsonPath('totalMinor', 41000)->assertJsonCount(0, 'blockingIssues')->assertJsonCount(3, 'warnings')->json();
         $effects = collect($quote['stockEffects'])->keyBy('inventoryItemId');
         foreach (['Beef' => '-100.000', 'Sauce' => '-35.000', 'Seasoning' => '0.625', 'Packaging' => '-1.000'] as $name => $after) {
             $this->assertSame($after, $effects[$ids[$name]]['after']);
         }
         $this->assertSame('1.000', $effects[$water->stock_item_id]['after']);
         $this->assertSame('1.000', $effects[$cheese->stock_item_id]['after']);
+        $burger->update(['price_minor' => 11000]);
+        $this->postJson($url, ['lines' => $lines, 'payment' => null])->assertOk()->assertJsonPath('totalMinor', 44000);
         $burger->components()->where('inventory_item_id', $ids['Beef'])->update(['quantity_thousandths' => 110000]);
         $next = $this->postJson($url, ['lines' => $lines, 'payment' => null])->assertOk()->json();
         $effect = collect($next['stockEffects'])->firstWhere('inventoryItemId', $ids['Beef']);

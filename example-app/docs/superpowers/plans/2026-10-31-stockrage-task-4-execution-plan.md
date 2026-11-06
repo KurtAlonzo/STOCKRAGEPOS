@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use superpowers:subagent-driven-development only when delegation is selected. Steps use checkbox (`- [ ]`) syntax for tracking. This document authorizes planning, not product implementation.
 
+**Execution status (2026-11-02):** Integrated cart preparation completed with independent review fixes; see [verification and Task 5 handoff](../../verification/2026-10-31-task-4-mixed-cart.md). Historical checkbox steps describe the intended sequence; the evidence report identifies actual automated/browser checks and supplementary limits.
+
 **Goal:** Deliver an owner/store-scoped mixed retail/food cart with per-line add-ons, exact estimates, server-authoritative quotes, and clear aggregate stock warnings, ready for Task 5 payment integration.
 
 **Architecture:** Laravel supplies a paginated POS catalog and caches five-minute quotes calculated from current store data without stock writes. React owns an in-memory cart and selected-item snapshots; JSON catalog/quote requests preserve cart state and reject stale responses. Extend the existing POS layout, stock-demand service, and navigation guard.

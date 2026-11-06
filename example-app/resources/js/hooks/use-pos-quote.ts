@@ -30,6 +30,8 @@ export function usePosQuote(
     );
     const matches =
         state.quote &&
+        JSON.stringify(state.quote.payment) ===
+            JSON.stringify(input.payment ?? null) &&
         state.quote.business.storeId === Number(input.scopeKey.split(':')[0]) &&
         cartInputKey(input.lines) ===
             cartInputKey(

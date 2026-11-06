@@ -6,8 +6,10 @@ use App\Actions\Pos\CreateQuote;
 use App\Data\CatalogData;
 use App\Data\InventoryData;
 use App\Data\PosCatalogData;
+use App\Data\PosDraftCatalogData;
 use App\Models\Category;
 use App\Models\Team;
+use App\Services\Pos\PaymentRules;
 use App\Services\Pos\QuoteUnavailable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,7 @@ class PosController extends Controller
     {
         $store = Team::where('slug', $current_team)->firstOrFail();
 
-        return Inertia::render('pos/index', [...PosCatalogData::page($store, $this->filters($request)), 'business' => InventoryData::business($store), 'categories' => Category::where('team_id', $store->id)->where('active', true)->orderBy('name')->get()->map(fn ($category) => CatalogData::category($category)), 'enabledPaymentMethods' => []]);
+        return Inertia::render('pos/index', [...PosCatalogData::page($store, $this->filters($request)), 'business' => InventoryData::business($store), 'categories' => Category::where('team_id', $store->id)->where('active', true)->orderBy('name')->get()->map(fn ($category) => CatalogData::category($category)), 'enabledPaymentMethods' => (new PaymentRules)->enabledMethods($store)]);
     }
 
     public function catalog(Request $request, string $current_team): JsonResponse
@@ -33,6 +35,13 @@ class PosController extends Controller
     private function filters(Request $request): array
     {
         return $request->validate(['query' => 'nullable|string|max:255', 'categoryId' => 'nullable|integer', 'page' => 'nullable|integer|min:1']);
+    }
+
+    public function draftCatalog(Request $request, string $current_team): JsonResponse
+    {
+        $input = $request->validate(['lines' => 'present|array', 'lines.*.id' => 'required|string', 'lines.*.productId' => 'required|integer', 'lines.*.addonIds' => 'present|array', 'lines.*.addonIds.*' => 'integer']);
+
+        return response()->json(PosDraftCatalogData::resolve(Team::where('slug', $current_team)->firstOrFail(), $input['lines']));
     }
 
     public function quote(Request $request, string $current_team, CreateQuote $create): JsonResponse

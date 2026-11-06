@@ -58,7 +58,7 @@ export default function PosLayout({
                         <SheetTrigger asChild>
                             <Button className="m-4 min-h-11">{summary}</Button>
                         </SheetTrigger>
-                        <SheetContent className="flex w-full flex-col p-6 sm:max-w-lg">
+                        <SheetContent className="flex w-full flex-col p-6 sm:max-w-lg [&>button]:min-h-11 [&>button]:min-w-11">
                             <SheetTitle>
                                 {header ? 'Cart' : 'Cart preview'}
                             </SheetTitle>

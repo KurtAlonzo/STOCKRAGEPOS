@@ -1,11 +1,22 @@
+import { clearPosMemory } from './auth-scope';
 import type { CartLine, CheckoutQuote, ContractError } from '@/types';
+import type { PosScope } from '@/types/pos';
+import type { PaymentInput } from '@/types/sales';
 import { lineKey } from './cart';
 export class PosRequestError extends Error implements ContractError {
     code: string;
     fieldErrors: Record<string, string[]>;
     issues: ContractError['issues'];
-    constructor(error: ContractError) {
+    httpStatus: number;
+    replacementQuote?: CheckoutQuote;
+    constructor(
+        error: ContractError,
+        httpStatus = 0,
+        replacementQuote?: CheckoutQuote,
+    ) {
         super(error.message);
+        this.httpStatus = httpStatus;
+        this.replacementQuote = replacementQuote;
         this.code = error.code;
         this.fieldErrors = error.fieldErrors;
         this.issues = error.issues;
@@ -32,9 +43,11 @@ export function contractError(error: unknown): ContractError {
 export async function requestJson<T>(
     url: string,
     init: RequestInit,
+    scope?: PosScope,
 ): Promise<T> {
     const headers = new Headers(init.headers);
     headers.set('Accept', 'application/json');
+    if (scope) headers.set('X-POS-Actor-Id', String(scope.userId));
     if (init.body) headers.set('Content-Type', 'application/json');
     if (
         (init.method ?? 'GET').toUpperCase() !== 'GET' &&
@@ -51,6 +64,23 @@ export async function requestJson<T>(
         headers,
         credentials: 'same-origin',
     });
+    if (
+        scope &&
+        (response.headers.get('X-POS-Actor-Id') !== String(scope.userId) ||
+            response.headers.get('X-POS-Store-Id') !== String(scope.storeId))
+    ) {
+        clearPosMemory(scope.userId);
+        throw new PosRequestError(
+            {
+                code: 'session_changed',
+                message:
+                    'Unable to verify this session. Sign in as the original owner.',
+                fieldErrors: {},
+                issues: [],
+            },
+            response.status,
+        );
+    }
     if (!response.headers.get('Content-Type')?.includes('application/json'))
         throw new Error(
             'Unexpected server response. Refresh your session and retry.',
@@ -65,7 +95,13 @@ export async function requestJson<T>(
             record(error.fieldErrors) &&
             Array.isArray(error.issues)
         )
-            throw new PosRequestError(error as ContractError);
+            throw new PosRequestError(
+                error as ContractError,
+                response.status,
+                record(body)
+                    ? (body.replacementQuote as CheckoutQuote | undefined)
+                    : undefined,
+            );
         throw new Error(
             `Request failed (${response.status}). Refresh your session or retry.`,
         );
@@ -133,6 +169,7 @@ export function validateQuote(
     value: unknown,
     lines: CartLine[],
     storeId: number,
+    payment: PaymentInput | null = null,
 ): value is CheckoutQuote {
     if (
         !record(value) ||
@@ -149,8 +186,13 @@ export function validateQuote(
         !Number.isFinite(Date.parse(value.expiresAt)) ||
         !money(value.totalMinor) ||
         value.subtotalMinor !== value.totalMinor ||
-        value.payment !== null ||
-        value.changeMinor !== null ||
+        JSON.stringify(value.payment) !== JSON.stringify(payment) ||
+        (payment === null
+            ? value.changeMinor !== null
+            : value.changeMinor !==
+              (payment.method === 'cash'
+                  ? payment.tenderedMinor - Number(value.totalMinor)
+                  : 0)) ||
         !record(value.catalogRevisions) ||
         !record(value.recipeRevisions) ||
         !issues(value.blockingIssues) ||
@@ -243,6 +285,7 @@ export type QuoteInputs = {
     lines: CartLine[];
     valid: boolean;
     quoteUrl: string;
+    payment?: PaymentInput | null;
 };
 export function cartInputKey(lines: CartLine[]): string {
     return JSON.stringify(
@@ -291,19 +334,32 @@ export function createQuoteSession(notify: () => void) {
         debounce = setTimeout(async () => {
             controller = new AbortController();
             try {
-                const quote = await requestJson<unknown>(captured.quoteUrl, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    body: JSON.stringify({
-                        lines: captured.lines,
-                        payment: null,
-                    }),
-                });
+                const quote = await requestJson<unknown>(
+                    captured.quoteUrl,
+                    {
+                        method: 'POST',
+                        signal: controller.signal,
+                        body: JSON.stringify({
+                            lines: captured.lines,
+                            payment: captured.payment ?? null,
+                        }),
+                    },
+                    {
+                        storeId: Number(captured.scopeKey.split(':')[0]),
+                        userId: Number(captured.scopeKey.split(':')[1]),
+                        storeSlug: '',
+                    },
+                );
                 if (!gate.accepts(generation, captured.scopeKey, inputKey))
                     return;
                 const storeId = Number(captured.scopeKey.split(':')[0]);
                 if (
-                    !validateQuote(quote, captured.lines, storeId) ||
+                    !validateQuote(
+                        quote,
+                        captured.lines,
+                        storeId,
+                        captured.payment ?? null,
+                    ) ||
                     Date.parse(quote.expiresAt) <= Date.now()
                 )
                     throw new Error(
@@ -330,14 +386,15 @@ export function createQuoteSession(notify: () => void) {
         }, 300);
     };
     return {
-        subscribe(listener: () => void) {
+        subscribe(this: void, listener: () => void) {
             listeners.add(listener);
             return () => {
                 listeners.delete(listener);
             };
         },
         update(next: QuoteInputs) {
-            const nextKey = cartInputKey(next.lines);
+            const nextKey =
+                cartInputKey(next.lines) + JSON.stringify(next.payment ?? null);
             if (
                 input?.scopeKey === next.scopeKey &&
                 input.quoteUrl === next.quoteUrl &&

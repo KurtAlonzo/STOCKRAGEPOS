@@ -94,3 +94,24 @@ export type PosPageProps = PosCatalogPage & {
     categories: Category[];
     enabledPaymentMethods: PaymentInput['method'][];
 };
+
+export type PosScope = { userId: number; storeId: number; storeSlug: string };
+export type DraftOwner = { tabId: string; epoch: number };
+export type PosDraftCatalog = {
+    products: CatalogListItem[];
+    addons: CatalogListItem[];
+    inventory: InventoryItem[];
+    issues: ContractIssue[];
+};
+export type PosDraftRecord = {
+    schemaVersion: 1;
+    scope: PosScope;
+    draftId: string;
+    revision: number;
+    owner: DraftOwner;
+    lines: CartLine[];
+    quantityBuffers: Record<string, string>;
+    snapshots: PosDraftCatalog;
+    attempt: CheckoutAttempt | null;
+    terminal: { idempotencyKey: string; saleId: number } | null;
+};

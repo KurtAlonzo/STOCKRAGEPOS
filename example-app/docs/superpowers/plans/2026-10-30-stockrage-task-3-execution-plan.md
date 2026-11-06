@@ -10,7 +10,7 @@
 
 **Spec:** [Task 3 design](../specs/2026-10-30-stockrage-task-3-catalog-inventory-design.md), read with [parent Task 3](2026-10-29-stockrage-frontend-action-plan.md) and [POS v1 contract](../../contracts/pos-v1.md).
 
-**Status:** Implemented with local verification; see [evidence](../../verification/2026-10-30-task-3-catalog-inventory.md) and [execution ledger](../../verification/task-3-execution-ledger.md). Changes remain uncommitted for review. Full-repository formatting gates retain documented baseline failures.
+**Status:** Implemented with local verification; see [evidence](../../verification/2026-10-30-task-3-catalog-inventory.md) and [execution ledger](../../verification/task-3-execution-ledger.md). The implementation is committed in 3f98af1; the November 2 audit and accompanying working-tree fixes supersede the old baseline formatting failures. See [readiness audit](../../verification/2026-10-31-task-3-readiness-audit.md).
 
 ## Global constraints
 

@@ -1,3 +1,5 @@
+import { router } from '@inertiajs/react';
+import { clearPosMemory } from '@/lib/pos/auth-scope';
 import { createInertiaApp } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -8,6 +10,13 @@ import PosLayout from '@/layouts/pos-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { installHistoryTracking } from '@/lib/navigation-history';
 
+let previousActor: number | null = null;
+router.on('navigate', (event) => {
+    const actor = event.detail.page.props.auth?.user?.id ?? null;
+    if (previousActor !== null && previousActor !== actor)
+        clearPosMemory(previousActor);
+    previousActor = actor;
+});
 const appName = import.meta.env.VITE_APP_NAME || 'STOCKRAGE POS';
 installHistoryTracking();
 

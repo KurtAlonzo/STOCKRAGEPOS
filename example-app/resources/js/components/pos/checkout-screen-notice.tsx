@@ -13,7 +13,12 @@ export default function CheckoutScreenNotice({
                 Use a tablet or desktop with a browser window at least 768
                 pixels wide. You can still manage your store here.
             </p>
-            <Link href={dashboardHref}>Return to dashboard</Link>
+            <Link
+                className="inline-flex min-h-11 items-center underline"
+                href={dashboardHref}
+            >
+                Return to dashboard
+            </Link>
         </div>
     );
 }

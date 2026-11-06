@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Models\InventoryItem;
 use App\Models\StockMovement;
+use App\Models\StockOperation;
 use App\Models\Team;
 use App\Support\Quantity;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -33,7 +34,7 @@ final class InventoryData
      */
     public static function movement(StockMovement $movement): array
     {
-        return ['id' => $movement->id, 'inventoryItemId' => $movement->inventory_item_id, 'kind' => $movement->kind, 'before' => Quantity::format((int) $movement->before_thousandths), 'delta' => Quantity::format((int) $movement->delta_thousandths), 'after' => Quantity::format((int) $movement->after_thousandths), 'unit' => $movement->unit, 'reason' => $movement->reason, 'actorId' => $movement->actor_id, 'actorName' => $movement->actor_name, 'itemName' => $movement->item_name, 'occurredAt' => $movement->created_at->toISOString(), 'sourceType' => $movement->kind, 'sourceId' => $movement->stock_operation_id];
+        return ['id' => $movement->id, 'inventoryItemId' => $movement->inventory_item_id, 'kind' => $movement->kind, 'before' => Quantity::format((int) $movement->before_thousandths), 'delta' => Quantity::format((int) $movement->delta_thousandths), 'after' => Quantity::format((int) $movement->after_thousandths), 'unit' => $movement->unit, 'reason' => $movement->reason, 'actorId' => $movement->actor_id, 'actorName' => $movement->actor_name, 'itemName' => $movement->item_name, 'occurredAt' => $movement->created_at->toISOString(), 'sourceType' => $movement->kind, 'sourceId' => StockOperation::findOrFail($movement->stock_operation_id)->sale_id ?? $movement->stock_operation_id];
     }
 
     /**

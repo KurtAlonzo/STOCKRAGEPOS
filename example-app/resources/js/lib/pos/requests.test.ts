@@ -164,7 +164,11 @@ describe('POS requests', () => {
         await vi.advanceTimersByTimeAsync(300);
         const respond = (value: unknown) =>
             new Response(JSON.stringify(value), {
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-POS-Actor-Id': '1',
+                    'X-POS-Store-Id': '1',
+                },
             });
         pending[1](
             respond({
