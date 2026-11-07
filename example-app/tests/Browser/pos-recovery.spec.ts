@@ -31,6 +31,7 @@ test('committed response loss and refresh recover one original sale without anot
         ),
     ).toBeVisible();
     expect(posts).toBe(1);
+    await expect.poll(() => fixture().sales).toBe(1);
     const original = fixture().attempts[0].idempotency_key;
     await page.reload();
     await expect(

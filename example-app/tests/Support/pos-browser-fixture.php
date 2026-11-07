@@ -24,6 +24,7 @@ if ($command === 'reset') {
         touch(config('database.connections.sqlite.database'));
     }
     Artisan::call('migrate:fresh', ['--force' => true]);
+    app('cache')->flush();
     $u = User::factory()->create(['name' => 'Browser Owner', 'email' => 'task5@example.test', 'password' => 'password']);
     $base = ['categoryId' => null, 'active' => true, 'allowedAddonIds' => [], 'lowStockThreshold' => null];
     $save = new SaveCatalogItem;
