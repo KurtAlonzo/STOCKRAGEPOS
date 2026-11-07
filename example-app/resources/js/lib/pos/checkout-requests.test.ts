@@ -7,7 +7,8 @@ import {
 } from './checkout-requests';
 const scope = { userId: 1, storeId: 2, storeSlug: 'shop' };
 it('rejects another actor response before applying its business rejection', async () => {
-    let invalidations=0;const stop=subscribePosMemory(scope.userId,()=>invalidations++);
+    let invalidations = 0;
+    const stop = subscribePosMemory(scope.userId, () => invalidations++);
     vi.stubGlobal(
         'fetch',
         vi.fn(
@@ -35,7 +36,8 @@ it('rejects another actor response before applying its business rejection', asyn
     await expect(
         requestPosJson('/pos', {}, scope, decodeLookup),
     ).rejects.toThrow('session');
-    expect(invalidations).toBe(1);stop();
+    expect(invalidations).toBe(1);
+    stop();
     vi.unstubAllGlobals();
 });
 it('rejects malformed confirmed and pending bodies', () => {
