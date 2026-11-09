@@ -26,6 +26,7 @@ async function prepare(page: Page, stock = true) {
 test('committed refund response loss refresh recovers one full refund and two returns', async ({
     page,
 }) => {
+    test.setTimeout(90000);
     await prepare(page);
     let posts = 0;
     await page.route('**/sales/*/reversal', (route) => route.abort());
@@ -73,6 +74,61 @@ test('committed refund response loss refresh recovers one full refund and two re
         counts.stock.find((s: { name: string }) => s.name === 'Cheese')
             .balance_thousandths,
     ).toBe(2000);
+
+    const original = JSON.parse(counts.attempts[0].result_json).body;
+    const decoded = await page.evaluate(async (original) => {
+        const url =
+            'http://127.0.0.1:5179/resources/js/lib/pos/checkout-requests.ts';
+        const { decodeCompletion } = await import(url);
+        return decodeCompletion(original);
+    }, original);
+    expect(decoded.status).toBe('confirmed');
+    expect(decoded.sale.reversal).toBeNull();
+    await expect(
+        page.getByRole('region', { name: 'Sale receipt' }),
+    ).toContainText('Recorded refund');
+    await page
+        .getByRole('link', { name: 'Back to sales', exact: true })
+        .click();
+    await page
+        .getByRole('combobox', { name: 'Status', exact: true })
+        .selectOption('reversed');
+    await page.getByLabel('Original payment').selectOption('cash');
+    const day = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Manila',
+    });
+    await page.getByLabel('Sale date from').fill(day);
+    await page.getByLabel('Sale date to').fill(day);
+    await page.getByRole('button', { name: 'Apply filters' }).click();
+    await page.getByRole('link', { name: 'SR-00000001', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: 'SR-00000001', exact: true }),
+    ).toBeVisible();
+    await page.screenshot({
+        path: 'docs/verification/screenshots/2026-11-09/task6-refunded-detail-desktop.png',
+        fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+        path: 'docs/verification/screenshots/2026-11-09/task6-refunded-detail-phone.png',
+        fullPage: true,
+    });
+    expect(
+        await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+    ).toBe(true);
+    await page
+        .getByRole('link', { name: 'Water', exact: true })
+        .first()
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Inventory', exact: true }),
+    ).toBeVisible();
+    await expect(
+        page.getByText('Customer return', { exact: true }),
+    ).toBeVisible();
+    expect(fixture()).toMatchObject({ sales: 1, payments: 1, movements: 8 });
 });
 
 test('pending refund uses explicit identical request retry after refresh', async ({
@@ -262,4 +318,75 @@ test('missed account broadcast hides unresolved refund details and original owne
     ).toBeVisible();
     expect(fixture().reversals).toHaveLength(1);
     expect(fixture().movements).toBe(8);
+});
+test('phone refund supports keyboard completion, empty stock defaults and focus return', async ({
+    page,
+}) => {
+    await completedMixedSale(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const opener = page.getByRole('button', {
+        name: 'Refund full sale',
+        exact: true,
+    });
+    await opener.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel('Actual refund method')).toHaveValue('cash');
+    await expect(page.getByLabel(/Return Water/)).toHaveValue('');
+    await expect(page.getByLabel(/Return Cheese/)).toHaveValue('');
+    await page.getByLabel('Reason', { exact: true }).focus();
+    await page.keyboard.type('Keyboard refund');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('KEYBOARD');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space');
+    await page.screenshot({
+        path: 'docs/verification/screenshots/2026-11-09/task6-refund-dialog-phone.png',
+        fullPage: true,
+    });
+    await page.keyboard.press('Tab');
+    await expect(
+        page.getByRole('button', { name: 'Record full refund', exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(
+        page.getByRole('heading', {
+            name: 'Full refund recorded',
+            exact: true,
+        }),
+    ).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(
+        page.getByRole('button', { name: 'View recorded refund', exact: true }),
+    ).toBeFocused();
+    expect(fixture().reversals).toHaveLength(1);
+    expect(fixture().movements).toBe(6);
+});
+test('same-account focus revalidation preserves unsaved refund method and return selections', async ({
+    page,
+}) => {
+    await prepare(page);
+    await page
+        .getByLabel('Refund reference (optional)')
+        .fill('EXTERNAL-RECEIPT');
+    const checked = page.waitForResponse(
+        (response) =>
+            response.url().endsWith('/sales/1/reversal') &&
+            response.request().method() === 'GET',
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await checked;
+    await expect(
+        page.getByRole('textbox', { name: 'Reason', exact: true }),
+    ).toHaveValue('Customer return');
+    await expect(page.getByLabel('Actual refund method')).toHaveValue('maya');
+    await expect(page.getByLabel('Refund reference (optional)')).toHaveValue(
+        'EXTERNAL-RECEIPT',
+    );
+    await expect(page.getByLabel(/Return Water/)).toHaveValue('1');
+    await expect(page.getByLabel(/Return Cheese/)).toHaveValue('1');
+    expect(fixture().reversalAttempts).toHaveLength(0);
 });

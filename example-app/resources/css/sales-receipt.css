@@ -1,0 +1,60 @@
+@page {
+    size: A5;
+    margin: 12mm;
+}
+@media print {
+    html,
+    body {
+        background: white !important;
+        color: black !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    [data-slot='sidebar'],
+    [data-slot='sidebar-wrapper'] > div:not([data-slot='sidebar-inset']),
+    [data-slot='sidebar-inset'] > header,
+    .sale-review-content,
+    [data-sonner-toaster],
+    [role='dialog'],
+    [data-slot='dialog-overlay'] {
+        display: none !important;
+    }
+    [data-slot='sidebar-wrapper'],
+    [data-slot='sidebar-inset'],
+    .sale-detail-page {
+        display: block !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: white !important;
+    }
+    .sales-receipt {
+        display: block !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        color: black !important;
+        background: white !important;
+        font-size: 10pt;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+    .sales-receipt .receipt-header {
+        display: block !important;
+    }
+    .receipt-line,
+    .receipt-totals,
+    .receipt-refund {
+        break-inside: avoid;
+    }
+    .sales-receipt p {
+        orphans: 3;
+        widows: 3;
+    }
+}

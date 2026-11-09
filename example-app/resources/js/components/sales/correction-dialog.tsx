@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,6 +11,13 @@ import {
 import type { SaleShowProps, ReversalInput } from '@/types/sales';
 import type { ReversalState } from '@/lib/sales/reversal-session';
 import { formatPriceMinor } from '@/lib/catalog/form-values';
+export type CorrectionForm = {
+    reason: string;
+    method: ReversalInput['refundMethod'];
+    reference: string;
+    quantities: Record<number, string>;
+    confirmed: boolean;
+};
 export default function CorrectionDialog({
     open,
     onOpenChange,
@@ -19,6 +27,9 @@ export default function CorrectionDialog({
     onSubmit,
     onCheck,
     onRetry,
+    form,
+    onFormChange,
+    onReturnFocus,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -28,16 +39,24 @@ export default function CorrectionDialog({
     onSubmit: (input: ReversalInput) => void;
     onCheck: () => void;
     onRetry: () => void;
+    form: CorrectionForm;
+    onFormChange: Dispatch<SetStateAction<CorrectionForm>>;
+    onReturnFocus: () => void;
 }) {
-    const [reason, setReason] = useState(''),
-        [method, setMethod] = useState(sale.payment.input.method),
-        [reference, setReference] = useState(''),
-        [quantities, setQuantities] = useState<Record<number, string>>({}),
-        [confirmed, setConfirmed] = useState(false),
-        [online, setOnline] = useState(
-            () => typeof navigator === 'undefined' || navigator.onLine,
-        );
-    const opener = useRef<HTMLElement | null>(null);
+    const { reason, method, reference, quantities, confirmed } = form;
+    const setReason = (reason: string) =>
+        onFormChange((old) => ({ ...old, reason }));
+    const setMethod = (method: CorrectionForm['method']) =>
+        onFormChange((old) => ({ ...old, method }));
+    const setReference = (reference: string) =>
+        onFormChange((old) => ({ ...old, reference }));
+    const setQuantities = (quantities: Record<number, string>) =>
+        onFormChange((old) => ({ ...old, quantities }));
+    const setConfirmed = (confirmed: boolean) =>
+        onFormChange((old) => ({ ...old, confirmed }));
+    const [online, setOnline] = useState(
+        () => typeof navigator === 'undefined' || navigator.onLine,
+    );
     const heading = useRef<HTMLHeadingElement>(null);
     useEffect(() => {
         const update = () => setOnline(navigator.onLine);
@@ -48,9 +67,6 @@ export default function CorrectionDialog({
             window.removeEventListener('offline', update);
         };
     }, []);
-    useEffect(() => {
-        if (state?.status === 'rejected') setConfirmed(false);
-    }, [state?.status]);
     useEffect(() => {
         if (open && state?.status === 'recorded') heading.current?.focus();
     }, [open, state?.status]);
@@ -64,12 +80,9 @@ export default function CorrectionDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 className="max-h-[90dvh] overflow-y-auto [&>button]:min-h-11 [&>button]:min-w-11"
-                onOpenAutoFocus={() => {
-                    opener.current = document.activeElement as HTMLElement;
-                }}
                 onCloseAutoFocus={(event) => {
                     event.preventDefault();
-                    opener.current?.focus();
+                    onReturnFocus();
                 }}
             >
                 <DialogTitle ref={heading} tabIndex={-1}>
