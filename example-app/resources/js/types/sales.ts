@@ -71,7 +71,7 @@ export type Sale = {
 };
 export type SalesIndexProps = {
     business: BusinessContext;
-    sales: PageSlice<Sale>;
+    sales: PageSlice<SaleSummary>;
     filters: {
         reference: string;
         dateFrom: string | null;
@@ -80,4 +80,24 @@ export type SalesIndexProps = {
         status: Sale['status'] | null;
     };
 };
-export type SaleShowProps = { business: BusinessContext; sale: Sale };
+export type SaleSummary = Pick<
+    Sale,
+    'id' | 'reference' | 'status' | 'occurredAt' | 'totalMinor'
+> & {
+    paymentMethod: PaymentInput['method'];
+    refundedMinor: number;
+    netMinor: number;
+};
+export type SaleShowProps = {
+    business: BusinessContext;
+    sale: Sale;
+    storeName: string;
+    restockCandidates: {
+        inventoryItemId: number;
+        name: string;
+        unit: 'each';
+        maxQuantity: DecimalQuantity;
+        active: boolean;
+    }[];
+    returnTo: { filters: SalesIndexProps['filters']; page: number };
+};

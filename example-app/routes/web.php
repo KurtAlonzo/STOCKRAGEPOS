@@ -8,6 +8,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\StockOperationController;
 use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Middleware\EnsureLocalEnvironment;
@@ -21,6 +22,8 @@ Route::get('/dashboard', EntryController::class)->name('entry');
 Route::inertia('/no-store-access', 'no-store-access')->middleware('auth')->name('no-store-access');
 Route::prefix('{current_team}')->middleware(['auth', 'verified', EnsureTeamMembership::class.':owner'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('sales', [SalesController::class, 'index'])->name('sales.index');
+    Route::get('sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
     Route::get('pos/catalog', [PosController::class, 'catalog'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('pos.catalog');
     Route::post('pos/quotes', [PosController::class, 'quote'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('pos.quotes.store');

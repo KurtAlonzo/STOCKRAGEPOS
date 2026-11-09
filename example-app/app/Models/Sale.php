@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property array<int, array<string, mixed>> $lines_json
  * @property CarbonImmutable $occurred_at
+ * @property-read SaleReversal|null $reversal
+ * @property-read Payment $payment
  */
 class Sale extends Model
 {
