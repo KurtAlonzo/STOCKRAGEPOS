@@ -2,20 +2,20 @@
 
 ## Task 4 implementation amendments — 2026-10-31
 
-Order preparation now implements `GET /{current_team}/pos` (`pos.index`), `GET /{current_team}/pos/catalog` (`pos.catalog`) and `POST /{current_team}/pos/quotes` (`pos.quotes.store`). Payment recording, completion and attempt lookup are now implemented by Task 5 (see amendments below). Sales management and reversals remain Task 6 work.
+Order preparation now implements `GET /{current_team}/pos` (`pos.index`), `GET /{current_team}/pos/catalog` (`pos.catalog`) and `POST /{current_team}/pos/quotes` (`pos.quotes.store`). Payment recording, completion and attempt lookup are now implemented by Task 5 (see amendments below). Task 6 sales management and reversals are now implemented; see the current amendments below.
 
 - `StockEffect` adds required `inventoryItemName` so projections remain readable after recipes change. Task 5 now accepts validated final payment/change; preparation quotes may still use null payment.
 - `PosCatalogPage` carries 25-row `catalog`, page-scoped resolved `addons` and `inventory`, `filters {query,categoryId}`, and `hasProducts` before filters. `PosPageProps` adds business context, categories and the configured enabled-payment-method list. Zero-stock direct products remain selectable; structural configuration errors block selection.
 - JSON catalog and quote routes use the trusted `preserve_current_team` route default after owner authorization. Their data always comes from the route store; background requests do not change the selected store.
 - Quotes use exact current catalog/recipe snapshots and named aggregate effects inside the store transaction. Direct shortages are blockers; recipe shortages are warnings. Quoting never changes inventory, revisions, stock operations or movements.
 - An immutable `{input,quote}` envelope is cached for 300 seconds under `pos:quote:{storeId}:{userId}:{quoteId}`. Cache failure returns 503 `quote_unavailable`; eviction/expiry requires a fresh quote. This is not a durable checkout-attempt record and cannot resolve an already confirmed sale.
-- Cart IDs are UUIDs; identity is product plus sorted unique add-ons. Counts are positive whole numbers up to `9007199254740`, bounded by safe money/thousandth arithmetic. Invalid fields retain input and suppress quoting. The browser holds cart state only in memory and guards nonempty navigation.
+- Cart IDs are UUIDs; identity is product plus sorted unique add-ons. Counts are positive whole numbers up to `9007199254740`, bounded by safe money/thousandth arithmetic. Invalid fields retain input and suppress quoting. Task 5 durably stores user/store drafts, keeps unsubmitted payment in memory, and guards unsaved persistence.
 
-These implemented routes supersede their proposed status in the historical matrix below. No checkout completion or attempt routes have been added.
+These implemented routes supersede their proposed status in the historical matrix below. Task 5 completion/attempt routes and Task 6 sales/refund routes are now implemented; later amendments supersede the original Task 4-only scope.
 
 ## Task 3 implementation amendments — 2026-10-30
 
-Catalog and inventory use the Task 3 design and exported types below. Checkout, payment and attempt lookup are implemented by Task 5. Sales management and reversal endpoints remain Task 6 work. The endpoint matrix includes intended release routes; use implementation amendments for current availability.
+Catalog and inventory use the Task 3 design and exported types below. Checkout, payment and attempt lookup are implemented by Task 5. Task 6 sales management and reversal endpoints are now implemented. The endpoint matrix includes intended release routes; use implementation amendments for current availability.
 
 - Inventory read records add `active`, `lowStockThreshold` (nullable canonical decimal) and `stockState` (`negative/zero/low/positive`). Optional thresholds are in the item's base unit. Negative and zero take precedence; a positive balance at or below a configured threshold is low. Thresholds do not add sale-blocking rules.
 - Public `InventoryItemInput` creates ingredients/supplies only, with `name/kind/unit/active/lowStockThreshold`. Retail/direct add-on records are created automatically and atomically by catalog save, initially at zero. They cannot be shared or selected by a supplied `stockItemId`.
@@ -165,11 +165,11 @@ resources/js/fixtures/pos/scenarios.ts is explicitly fixture-only. It contains t
 - [x] Concurrent identical attempts and process-crash recovery produce only one sale/payment/movement set.
 - [x] Response loss and confirmed replay after quote expiry recover the original sale.
 - [x] New duplicate-reference warnings require review but never force a unique reference.
-- [ ] Full reversal/restock applies once and preserves original snapshots after catalog edits.
+- [x] Full reversal/restock applies once and preserves original snapshots after catalog edits.
 
 ## Handoff
 
-User confirmed business-rule agreement on 2026-10-30. Tasks 1–5 are implemented locally, including checkout and interruption recovery. See [Task 5 verification](../verification/2026-11-07-task-5-payment-recovery.md) for current evidence and external checks. Task 6 sales management/corrections is next. Tax treatment and deployment readiness remain unresolved; no provider integration is implied.
+User confirmed business-rule agreement on 2026-10-30. Tasks 1–6 are implemented locally, including checkout, sales history, full refunds and interruption recovery. See [Task 5 verification](../verification/2026-11-07-task-5-payment-recovery.md) for current evidence and external checks. Task 7 global history/dashboard/business settings is next. Tax treatment and deployment readiness remain unresolved; no provider integration is implied.
 
 ## Verification record — 2026-10-29
 
@@ -201,3 +201,5 @@ A full reversal records the original sale total, never tender. `ReversalInput` i
 Task 6 historical reads implement owner/verified `GET /{store}/sales` and `GET /{store}/sales/{sale}`. The index sends compact summaries, original payment filters, literal reference substrings and 25 rows ordered by descending UTC time/ID. Manila from/to dates map to inclusive UTC start/exclusive next-day end. Detail returns immutable snapshots and reversal/movement history, current store display name (not a historical snapshot), bounded original direct-stock return candidates and validated filter/page return context. Navigation remains hidden until the sales screens are connected. Reversal movement source IDs identify the reversal; original sale movement IDs identify the sale.
 
 Task 6 refund writes implement JSON `POST /{store}/sales/{sale}/reversals`, plus read-only current reversal and actor-scoped attempt lookups at `/reversal` and `/reversal-attempts/{key}`. These financial JSON responses are an intentional exception to management form redirects. All three require verified owner access and matching actor headers; echoed actor/store identity must be validated before applying a response. Registration binds a canonical sale/request/key before store → attempt → sale → sorted-stock transaction locks. One sale reversal and the terminal outcome commit together with selective stock returns. Definitive 422/409 business rejections are retained; lookup exposes rejected, and replay remains rejected after inventory changes. Envelope-invalid 422 is before registration. Transient contention remains 202 pending; unreadable durable outcome is 503 `reversal_status_unknown`. Current reversal lookup may find a different recorded operation. Neither not_found nor pending grants a new operation identity.
+
+Task 6 local verification passed on 2026-11-09: [evidence, artifacts and release limits](../verification/2026-11-07-task-6-sales-corrections.md). Separate `stockrage-sales` IndexedDB v1 persists unresolved refund requests by actor/store/sale; unsaved form edits stay in scoped memory, including same-account focus revalidation. Receipt output uses immutable line/payment/refund data and current store display name. Optional A5 browser printing is read-only; internal reason and stock audit remain on detail. All 35 browser tests passed, including committed refund response loss and original checkout decoding after refund. No provider, tax, native-printer or deployment-readiness claim is implied.

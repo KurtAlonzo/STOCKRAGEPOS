@@ -168,13 +168,15 @@ Reuse current form, dialog, button, badge, feedback, and layout patterns. Add sh
 
 ## Task 6: Review and correct completed sales
 
+**Status:** Implemented and locally verified 2026-11-09; [sales corrections evidence and release limits](../../verification/2026-11-07-task-6-sales-corrections.md).
+
 **Depends on:** Task 5. **Files:** sales pages, correction dialog, receipt component, backend reversal and stock-history actions/tests.
 
-- [ ] Build sales history with reference/date/payment/status filters and persistent pagination. Provide transaction detail with item/modifier snapshots, original totals, payment details, and linked stock movements.
-- [ ] Add full-sale reversal/refund with required reason and explicit confirmation of the external money return. The app records that action; it does not transfer funds.
-- [ ] Require an explicit restockable selection for returned retail items. Do not automatically restore consumed food ingredients or supplies. A physical inventory correction is a separate reasoned stock action.
-- [ ] Preserve original sales, payments, prices, recipe deductions, and linked reversals. Stop repeated corrections and duplicate restocking; show original and adjusted financial status without deleting history.
-- [ ] Provide the receipt on screen and optional A5 browser print/Save as PDF. Isolate print styling from the application theme/chrome; cancellation or printer failure leaves the confirmed sale intact.
+- [x] Build sales history with reference/date/payment/status filters and persistent pagination. Provide transaction detail with item/modifier snapshots, original totals, payment details, and linked stock movements.
+- [x] Add full-sale reversal/refund with required reason and explicit confirmation of the external money return. The app records that action; it does not transfer funds.
+- [x] Require an explicit restockable selection for returned retail items. Do not automatically restore consumed food ingredients or supplies. A physical inventory correction is a separate reasoned stock action.
+- [x] Preserve original sales, payments, prices, recipe deductions, and linked reversals. Stop repeated corrections and duplicate restocking; show original and adjusted financial status without deleting history.
+- [x] Provide the receipt on screen and optional A5 browser print/Save as PDF. Isolate print styling from the application theme/chrome; cancellation or printer failure leaves the confirmed sale intact.
 
 **Proof:** a retail return can restore eligible stock once, while a food refund leaves used ingredients deducted. Financial totals and history remain explainable after reversal. Check original sale snapshots after catalog edits, repeated reversal submissions, optional print cancellation, and store isolation.
 
