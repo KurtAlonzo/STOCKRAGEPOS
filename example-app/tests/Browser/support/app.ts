@@ -111,3 +111,64 @@ export async function logout(page: Page) {
     });
     expect(response.ok()).toBe(true);
 }
+
+export async function completedMixedSale(page: Page) {
+    await openPos(page);
+    await mixedCart(page);
+    await page
+        .getByRole('button', { name: 'Review payment', exact: true })
+        .click();
+    await page
+        .getByRole('button', { name: 'Confirm payment recording' })
+        .click();
+    await page.getByRole('link', { name: 'View sale', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: 'SR-00000001', exact: true }),
+    ).toBeVisible();
+}
+export async function abandonRegisteredReversal(
+    request: unknown,
+    saleId: number,
+) {
+    const dir = resolve('storage/framework/testing/task5-browser');
+    const prefix = resolve(dir, `refund-abandoned-${Date.now()}`);
+    writeFileSync(prefix + '.json', JSON.stringify(request));
+    const worker = spawn(
+        'php',
+        [
+            'tests/Support/reversal-worker.php',
+            resolve(dir, 'test.sqlite'),
+            resolve(dir, 'framework/cache/data'),
+            '1',
+            String(saleId),
+            prefix + '.json',
+            prefix,
+            prefix + '.gate',
+        ],
+        {
+            env: {
+                ...process.env,
+                APP_ENV: 'testing',
+                APP_CONFIG_CACHE: resolve(dir, 'config.php'),
+            },
+        },
+    );
+    let error = '';
+    worker.stderr.on('data', (data) => {
+        error += String(data);
+    });
+    try {
+        await expect
+            .poll(
+                () => {
+                    if (worker.exitCode !== null)
+                        throw new Error(error || 'Worker exited');
+                    return existsSync(prefix + '.registered');
+                },
+                { timeout: 20000 },
+            )
+            .toBe(true);
+    } finally {
+        worker.kill();
+    }
+}

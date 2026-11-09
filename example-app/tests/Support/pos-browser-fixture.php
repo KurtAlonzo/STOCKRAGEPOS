@@ -45,7 +45,7 @@ if ($command === 'reset') {
     User::factory()->create(['name' => 'Other Owner', 'email' => 'other@example.test', 'password' => 'password']);
     echo json_encode(['slug' => $u->currentTeam->slug, 'actorId' => $u->id, 'storeId' => $u->current_team_id]);
 } elseif ($command === 'counts') {
-    echo json_encode(['sales' => DB::table('sales')->count(), 'payments' => DB::table('payments')->count(), 'movements' => DB::table('stock_movements')->count(), 'attempts' => DB::table('checkout_attempts')->get()->toArray()]);
+    echo json_encode(['sales' => DB::table('sales')->count(), 'payments' => DB::table('payments')->count(), 'movements' => DB::table('stock_movements')->count(), 'attempts' => DB::table('checkout_attempts')->get()->toArray(), 'reversals' => DB::table('sale_reversals')->get()->toArray(), 'reversalAttempts' => DB::table('reversal_attempts')->get()->toArray(), 'stock' => DB::table('inventory_items')->get()->toArray()]);
 } elseif ($command === 'price') {
     DB::table('catalog_items')->where('sku', 'W')->update(['price_minor' => 5500, 'revision' => 2]);
 } elseif ($command === 'disable') {
@@ -64,6 +64,10 @@ if ($command === 'reset') {
     $store = Team::factory()->create(['name' => 'Second Browser Store']);
     $store->members()->attach($u, ['role' => 'owner']);
     echo json_encode(['slug' => $store->slug]);
+} elseif ($command === 'overflow-water') {
+    DB::table('inventory_items')->where('name', 'Water')->update(['balance_thousandths' => 9007199254740000]);
+} elseif ($command === 'normalize-water') {
+    DB::table('inventory_items')->where('name', 'Water')->update(['balance_thousandths' => 1000]);
 } elseif ($command === 'evict') {
     app('cache')->flush();
 } else {

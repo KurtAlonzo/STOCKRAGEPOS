@@ -1,10 +1,56 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { index } from '@/routes/sales';
 import { formatPriceMinor } from '@/lib/catalog/form-values';
 import StockMovements from '@/components/sales/stock-movements';
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import CorrectionDialog from '@/components/sales/correction-dialog';
+import { useSaleReversal } from '@/hooks/use-sale-reversal';
 import type { SaleShowProps } from '@/types/sales';
 
-export default function SaleShow({ business, sale, returnTo }: SaleShowProps) {
+export default function SaleShow(props: SaleShowProps) {
+    const { business, returnTo, restockCandidates } = props;
+    const { auth } = usePage().props;
+    const scope = useMemo(
+        () => ({
+            userId: auth.user.id,
+            storeId: business.storeId,
+            storeSlug: business.storeSlug,
+            saleId: props.sale.id,
+        }),
+        [auth.user.id, business.storeId, business.storeSlug, props.sale.id],
+    );
+    const refund = useSaleReversal(scope);
+    const [open, setOpen] = useState(false);
+    const recorded = refund.state?.reversal ?? props.sale.reversal;
+    const sale = recorded
+        ? { ...props.sale, status: 'reversed' as const, reversal: recorded }
+        : props.sale;
+    useEffect(() => {
+        if (refund.state?.status === 'recorded' && !props.sale.reversal)
+            router.reload({ only: ['sale', 'restockCandidates'] });
+    }, [refund.state?.status, props.sale.reversal]);
+    if (!refund.error && !refund.state?.sessionValid)
+        return (
+            <div className="space-y-4 p-6">
+                <p role="status">
+                    {refund.state?.message ||
+                        'Verifying your session and current refund status…'}
+                </p>
+                {refund.state?.status === 'unknown' && (
+                    <p>
+                        Refund recording status is unknown. Do not return money
+                        again while checking this sale.
+                    </p>
+                )}
+                <Button
+                    disabled={!refund.session || refund.state?.busy}
+                    onClick={() => void refund.session?.restore()}
+                >
+                    Check again
+                </Button>
+            </div>
+        );
     const parameters = Object.fromEntries(
         Object.entries(returnTo.filters).filter(
             ([, v]) => v !== null && v !== '',
@@ -13,6 +59,41 @@ export default function SaleShow({ business, sale, returnTo }: SaleShowProps) {
     return (
         <div className="space-y-6 p-4 md:p-6">
             <Head title={sale.reference} />
+            {refund.error && (
+                <p role="alert">
+                    Refund storage is unavailable. Recording is blocked.{' '}
+                    {refund.error}
+                </p>
+            )}
+            <Button
+                className="min-h-11"
+                disabled={!refund.state?.sessionValid}
+                onClick={() => setOpen(true)}
+            >
+                {sale.reversal
+                    ? 'View recorded refund'
+                    : refund.state?.status === 'unknown' ||
+                        refund.state?.status === 'submitting'
+                      ? 'Check refund recording'
+                      : 'Refund full sale'}
+            </Button>
+            {!open && refund.state?.status === 'unknown' && (
+                <p role="status">
+                    Refund recording status is unknown. Do not return money
+                    again while checking this sale.
+                </p>
+            )}
+            <CorrectionDialog
+                open={open}
+                onOpenChange={setOpen}
+                sale={sale}
+                candidates={restockCandidates}
+                state={refund.state}
+                onSubmit={(input) => void refund.session?.submit(input)}
+                onCheck={() => void refund.session?.check()}
+                onRetry={() => void refund.session?.retryOriginal()}
+            />
+
             <Link
                 className="inline-block min-h-11 content-center text-sm underline"
                 href={index(business.storeSlug, {

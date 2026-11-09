@@ -322,6 +322,8 @@ const sale: Sale = {
         unit: s.unit,
         reason: 'Sale DEMO-0001',
         actorId: 1,
+        actorName: 'Demo Owner',
+        itemName: s.inventoryItemName,
         occurredAt: '2026-10-29T04:00:00Z',
         sourceType: 'sale',
         sourceId: 1,
