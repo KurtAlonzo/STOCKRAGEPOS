@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Link } from '@inertiajs/react';
 import type { CheckoutState } from '@/lib/pos/checkout-session';
 import { Button } from '@/components/ui/button';
 import { formatPriceMinor } from '@/lib/catalog/form-values';
@@ -7,11 +8,13 @@ export default function CheckoutResult({
     onCheck,
     onRetry,
     onNewSale,
+    saleUrl,
 }: {
     state: CheckoutState;
     onCheck: () => void;
     onRetry: () => void;
     onNewSale: () => void;
+    saleUrl?: string;
 }) {
     const heading = useRef<HTMLHeadingElement>(null);
     useEffect(() => {
@@ -41,6 +44,14 @@ export default function CheckoutResult({
                         </p>
                     ))}
                     <p>Total PHP {formatPriceMinor(state.sale.totalMinor)}</p>
+                    {saleUrl && (
+                        <Link
+                            className="inline-block min-h-11 content-center underline"
+                            href={saleUrl}
+                        >
+                            View sale
+                        </Link>
+                    )}
                     <p>
                         {state.sale.payment.input.method} · Recorded PHP{' '}
                         {formatPriceMinor(state.sale.payment.receivedMinor)}

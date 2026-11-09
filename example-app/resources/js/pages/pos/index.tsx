@@ -48,6 +48,7 @@ import { formatPriceMinor } from '@/lib/catalog/form-values';
 import { dashboard } from '@/routes';
 import { catalog as catalogRoute } from '@/routes/pos';
 import { store as quoteRoute } from '@/routes/pos/quotes';
+import { show as showSale } from '@/routes/sales';
 
 export default function Pos(props: PosPageProps) {
     const { auth } = usePage().props;
@@ -719,6 +720,14 @@ function PosCart(props: PosPageProps & { scopeKey: string }) {
                     resultVisible && checkout.state ? (
                         <CheckoutResult
                             state={checkout.state}
+                            saleUrl={
+                                checkout.state.sale
+                                    ? showSale({
+                                          current_team: scope.storeSlug,
+                                          sale: checkout.state.sale.id,
+                                      }).url
+                                    : undefined
+                            }
                             onCheck={() => {
                                 void checkout.session
                                     ?.checkAgain()

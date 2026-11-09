@@ -39,6 +39,10 @@ test('desktop tablet and phone notice retain layout and keyboard review', async 
         page.getByRole('heading', { name: 'Sale recorded' }),
     ).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(
+        page.getByRole('link', { name: 'View sale', exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'New Sale' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: /Water PHP/ })).toBeEnabled();
