@@ -42,6 +42,8 @@ export type ReversalInput = {
     idempotencyKey: string;
     reason: string;
     refundConfirmed: true;
+    refundMethod: PaymentInput['method'];
+    refundReference: string | null;
     restock: { inventoryItemId: number; quantity: DecimalQuantity }[];
 };
 export type SaleReversal = ReversalInput & {
@@ -49,6 +51,7 @@ export type SaleReversal = ReversalInput & {
     saleId: number;
     totalMinor: MinorUnits;
     actorId: number;
+    actorName: string;
     occurredAt: string;
 };
 export type Sale = {
