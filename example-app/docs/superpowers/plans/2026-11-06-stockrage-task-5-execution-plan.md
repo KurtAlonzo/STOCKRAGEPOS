@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Use superpowers:subagent-driven-development only when implementation delegation is authorized. Steps use checkbox (`- [ ]`) syntax for tracking. This document authorizes planning, not product implementation.
 
+**Carryover verification:** resumed 2026-11-09; see [current Task 5 evidence](../../verification/2026-11-07-task-5-payment-recovery.md) for automated coverage and explicit external release checks. Historical checkboxes below must be read with that evidence.
+
 **Goal:** Complete the existing mixed cart with recorded cash/GCash/Maya payments and recovery that cannot duplicate a sale, payment or stock deduction.
 
 **Architecture:** Backend-first Laravel completion with durable operation identities, current-state validation and atomic sale/payment/stock posting. Then add an IndexedDB draft with atomic tab ownership, scoped request validation and bounded status recovery to the existing React POS.
@@ -192,12 +194,12 @@ For each task: write the named tests, run the focused command and observe the in
 
 ## Acceptance checklist and handoff
 
-- [ ] One submission/replay family creates one sale/payment and exactly the intended aggregate movements.
-- [ ] A cache expiry, network failure, refresh or crashed processor never causes a new automatic operation or false success.
-- [ ] Drafts survive refresh/logout in their own account/store; unsubmitted payment does not; conflicting tabs cannot both edit/submit one draft.
-- [ ] Current prices, recipes, enabled methods, stock and warnings are checked at final review and atomically at completion.
-- [ ] Confirmed sale displays the reference/items/payment/change and safely starts a new sale; unresolved outcomes do neither.
-- [ ] Task 4 cart behavior and existing inventory workflows remain passing, and evidence records the actual backend/browser checks.
+- [x] One submission/replay family creates one sale/payment and exactly the intended aggregate movements.
+- [x] A cache expiry, network failure, refresh or crashed processor never causes a new automatic operation or false success.
+- [x] Drafts survive refresh/logout in their own account/store; unsubmitted payment does not; conflicting tabs cannot both edit/submit one draft.
+- [x] Current prices, recipes, enabled methods, stock and warnings are checked at final review and atomically at completion.
+- [x] Confirmed sale displays the reference/items/payment/change and safely starts a new sale; unresolved outcomes do neither.
+- [x] Task 4 cart behavior and existing inventory workflows remain passing, and evidence records the actual backend/browser checks.
 
 **Planning self-review:** Parent Task 5's eight bullets map to Tasks 4/6 (draft restore), 4/5 (logout/isolation), 4/5/7 (tabs and keys), 2/6 (payments), 2/3/6 (blocking), 2/3/6 (review), 3/5/7 (outcomes), and 5/6 (confirmation/New Sale). All five Review Focus cases have named tests. No implementation or new Task 5 test run is claimed by this plan.
 

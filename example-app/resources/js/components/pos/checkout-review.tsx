@@ -1,4 +1,5 @@
 import type { CheckoutQuote } from '@/types/pos';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,6 +21,9 @@ export default function CheckoutReview({
     disabled: boolean;
     busy: boolean;
 }) {
+    const [opener] = useState(() =>
+        typeof document === 'undefined' ? null : document.activeElement,
+    );
     return (
         <Dialog
             open
@@ -27,7 +31,13 @@ export default function CheckoutReview({
                 if (!open && !busy) onBack();
             }}
         >
-            <DialogContent className="max-h-[85dvh] overflow-y-auto [&>button]:min-h-11 [&>button]:min-w-11">
+            <DialogContent
+                className="max-h-[85dvh] overflow-y-auto [&>button]:min-h-11 [&>button]:min-w-11"
+                onCloseAutoFocus={(event) => {
+                    event.preventDefault();
+                    if (!busy && opener instanceof HTMLElement) opener.focus();
+                }}
+            >
                 <DialogTitle>Review payment recording</DialogTitle>
                 <DialogDescription>
                     Confirm the current items, total and warnings. External

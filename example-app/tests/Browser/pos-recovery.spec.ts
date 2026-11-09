@@ -1,6 +1,124 @@
 import { test, expect } from '@playwright/test';
-import { fixture, mixedCart, openPos } from './support/app';
+import {
+    abandonRegisteredCheckout,
+    fixture,
+    login,
+    logout,
+    mixedCart,
+    openPos,
+} from './support/app';
 test.beforeEach(() => fixture('reset'));
+
+test('pending_submission_survives_refresh_and_explicit_same_key_retry', async ({
+    page,
+}) => {
+    await openPos(page);
+    await mixedCart(page);
+    let original: unknown;
+    let posts = 0;
+    await page.route('**/pos/checkouts', async (route) => {
+        posts++;
+        original = route.request().postDataJSON();
+        await abandonRegisteredCheckout(original);
+        expect(fixture().attempts[0].status).toBe('pending');
+        await route.abort('connectionreset');
+    });
+    await page
+        .getByRole('button', { name: 'Review payment', exact: true })
+        .click();
+    await page
+        .getByRole('button', { name: 'Confirm payment recording' })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Payment status unknown' }),
+    ).toBeFocused();
+    expect(fixture()).toMatchObject({ sales: 0, payments: 0, movements: 0 });
+    const saved = fixture().attempts[0];
+    await page.reload();
+    await expect(
+        page.getByRole('heading', { name: 'Payment status unknown' }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: 'Resume same attempt' }),
+    ).toBeEnabled();
+    expect(posts).toBe(1);
+    await page.unroute('**/pos/checkouts');
+    await page.route('**/pos/checkouts', async (route) => {
+        posts++;
+        expect(route.request().postDataJSON()).toEqual(original);
+        await route.continue();
+    });
+    await page.getByRole('button', { name: 'Resume same attempt' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(
+        page.getByRole('heading', { name: 'Sale recorded' }),
+    ).toBeFocused();
+    expect(posts).toBe(2);
+    expect(fixture()).toMatchObject({ sales: 1, payments: 1, movements: 6 });
+    expect(fixture().attempts).toHaveLength(1);
+    expect(fixture().attempts[0].idempotency_key).toBe(saved.idempotency_key);
+    expect(fixture().attempts[0].request_json).toBe(saved.request_json);
+});
+
+test('off_page_saved_selection_restores', async ({ page }) => {
+    await openPos(page);
+    await page.getByRole('button', { name: /Water PHP/ }).click();
+    await expect(page.getByText('Cart saved on this browser')).toBeVisible();
+    fixture('off-page');
+    await page.reload();
+    await page.getByRole('button', { name: 'Take over', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Water PHP/ })).toHaveCount(
+        0,
+    );
+    await expect(
+        page.getByRole('button', { name: 'Remove Water', exact: true }),
+    ).toBeVisible();
+    await page.getByLabel('Cash tender (PHP)').fill('50');
+    await page
+        .getByRole('button', { name: 'Review payment', exact: true })
+        .click();
+    await expect(page.getByRole('dialog')).toContainText('Water');
+    await page
+        .getByRole('button', { name: 'Confirm payment recording' })
+        .click();
+    await expect(
+        page.getByRole('heading', { name: 'Sale recorded' }),
+    ).toBeVisible();
+    expect(fixture()).toMatchObject({ sales: 1, payments: 1, movements: 1 });
+});
+
+test('editable_drafts_stay_isolated_across_store_switch_and_logout', async ({
+    page,
+}) => {
+    await openPos(page);
+    const originalUrl = page.url();
+    await page.getByRole('button', { name: /Water PHP/ }).click();
+    await page.getByLabel('Cash tender (PHP)').fill('50');
+    await expect(page.getByText('Cart saved on this browser')).toBeVisible();
+    const second = fixture('second-store');
+    await page.goto('/' + second.slug + '/pos');
+    await expect(page.getByText('Empty cart', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Cash tender (PHP)')).toHaveValue('');
+    await page.goto(originalUrl);
+    await page.getByRole('button', { name: 'Take over', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Remove Water', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Cash tender (PHP)')).toHaveValue('');
+    await logout(page);
+    await login(page, 'other@example.test');
+    await page.getByRole('link', { name: 'POS', exact: true }).first().click();
+    await expect(page.getByText('Empty cart', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Cash tender (PHP)')).toHaveValue('');
+    await logout(page);
+    await login(page);
+    await page.goto(originalUrl);
+    await page.getByRole('button', { name: 'Take over', exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: 'Remove Water', exact: true }),
+    ).toBeVisible();
+    expect(fixture()).toMatchObject({ sales: 0, payments: 0 });
+});
 test('committed response loss and refresh recover one original sale without another POST', async ({
     page,
 }) => {

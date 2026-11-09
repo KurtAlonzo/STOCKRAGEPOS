@@ -2,6 +2,7 @@
 
 use App\Actions\Catalog\SaveCatalogItem;
 use App\Models\InventoryItem;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
@@ -49,6 +50,20 @@ if ($command === 'reset') {
     DB::table('catalog_items')->where('sku', 'W')->update(['price_minor' => 5500, 'revision' => 2]);
 } elseif ($command === 'disable') {
     DB::table('catalog_items')->where('sku', 'W')->update(['active' => false]);
+} elseif ($command === 'recipe') {
+    DB::table('recipe_components')->where('quantity_thousandths', 100000)->update(['quantity_thousandths' => 125000]);
+    DB::table('catalog_items')->where('sku', 'B')->increment('revision');
+    DB::table('inventory_items')->where('name', 'Beef')->update(['balance_thousandths' => 0]);
+} elseif ($command === 'off-page') {
+    $u = User::where('email', 'task5@example.test')->firstOrFail();
+    for ($i = 0; $i < 26; $i++) {
+        (new SaveCatalogItem)->handle($u->currentTeam, $u, ['name' => sprintf('A filler %02d', $i), 'sku' => 'F'.$i, 'kind' => 'retail', 'priceMinor' => 100, 'categoryId' => null, 'active' => true, 'allowedAddonIds' => [], 'lowStockThreshold' => null]);
+    }
+} elseif ($command === 'second-store') {
+    $u = User::where('email', 'task5@example.test')->firstOrFail();
+    $store = Team::factory()->create(['name' => 'Second Browser Store']);
+    $store->members()->attach($u, ['role' => 'owner']);
+    echo json_encode(['slug' => $store->slug]);
 } elseif ($command === 'evict') {
     app('cache')->flush();
 } else {

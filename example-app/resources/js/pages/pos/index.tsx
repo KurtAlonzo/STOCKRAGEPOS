@@ -748,8 +748,10 @@ function PosCart(props: PosPageProps & { scopeKey: string }) {
                                             draft.tabId,
                                         );
                                     })
-                                    .then(() => {
-                                        window.location.reload();
+                                    .then(async () => {
+                                        await checkout.session?.restore();
+                                        await draft.session?.restore();
+                                        setRetry((x) => x + 1);
                                     })
                                     .catch((e) => setMessage(String(e)));
                             }}

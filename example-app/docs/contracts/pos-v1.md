@@ -1,11 +1,11 @@
-# POS v1 contract — catalog/inventory integration and future checkout contract
+# POS v1 contract — catalog, inventory, checkout and recovery
 
 ## Task 4 implementation amendments — 2026-10-31
 
-Order preparation now implements `GET /{current_team}/pos` (`pos.index`), `GET /{current_team}/pos/catalog` (`pos.catalog`) and `POST /{current_team}/pos/quotes` (`pos.quotes.store`). Payment recording, completion, attempt lookup, sales and reversals remain unavailable.
+Order preparation now implements `GET /{current_team}/pos` (`pos.index`), `GET /{current_team}/pos/catalog` (`pos.catalog`) and `POST /{current_team}/pos/quotes` (`pos.quotes.store`). Payment recording, completion and attempt lookup are now implemented by Task 5 (see amendments below). Sales management and reversals remain Task 6 work.
 
-- `StockEffect` adds required `inventoryItemName` so projections remain readable after recipes change. Existing payment/recovery fixtures still describe future Task 5 scenarios; production Task 4 quotes always have null payment/change and reject every non-null payment value.
-- `PosCatalogPage` carries 25-row `catalog`, page-scoped resolved `addons` and `inventory`, `filters {query,categoryId}`, and `hasProducts` before filters. `PosPageProps` adds business context, categories and an empty enabled-payment-method list. Zero-stock direct products remain selectable; structural configuration errors block selection.
+- `StockEffect` adds required `inventoryItemName` so projections remain readable after recipes change. Task 5 now accepts validated final payment/change; preparation quotes may still use null payment.
+- `PosCatalogPage` carries 25-row `catalog`, page-scoped resolved `addons` and `inventory`, `filters {query,categoryId}`, and `hasProducts` before filters. `PosPageProps` adds business context, categories and the configured enabled-payment-method list. Zero-stock direct products remain selectable; structural configuration errors block selection.
 - JSON catalog and quote routes use the trusted `preserve_current_team` route default after owner authorization. Their data always comes from the route store; background requests do not change the selected store.
 - Quotes use exact current catalog/recipe snapshots and named aggregate effects inside the store transaction. Direct shortages are blockers; recipe shortages are warnings. Quoting never changes inventory, revisions, stock operations or movements.
 - An immutable `{input,quote}` envelope is cached for 300 seconds under `pos:quote:{storeId}:{userId}:{quoteId}`. Cache failure returns 503 `quote_unavailable`; eviction/expiry requires a fresh quote. This is not a durable checkout-attempt record and cannot resolve an already confirmed sale.
@@ -15,7 +15,7 @@ These implemented routes supersede their proposed status in the historical matri
 
 ## Task 3 implementation amendments — 2026-10-30
 
-Catalog and inventory use the Task 3 design and exported types below. Checkout, sales, payment, attempt lookup and reversal endpoints remain future work. The endpoint matrix distinguishes the intended release protocol from the implemented Task 3 subset; it does not imply checkout is available.
+Catalog and inventory use the Task 3 design and exported types below. Checkout, payment and attempt lookup are implemented by Task 5. Sales management and reversal endpoints remain Task 6 work. The endpoint matrix includes intended release routes; use implementation amendments for current availability.
 
 - Inventory read records add `active`, `lowStockThreshold` (nullable canonical decimal) and `stockState` (`negative/zero/low/positive`). Optional thresholds are in the item's base unit. Negative and zero take precedence; a positive balance at or below a configured threshold is low. Thresholds do not add sale-blocking rules.
 - Public `InventoryItemInput` creates ingredients/supplies only, with `name/kind/unit/active/lowStockThreshold`. Retail/direct add-on records are created automatically and atomically by catalog save, initially at zero. They cannot be shared or selected by a supplied `stockItemId`.
@@ -157,19 +157,19 @@ One full-sale reversal per sale, with its own idempotency key, reason and refund
 
 resources/js/fixtures/pos/scenarios.ts is explicitly fixture-only. It contains the mixed basket, long/inactive catalog data, raw invalid requests, payment/reference examples, changed quotes, access errors and lookup outcomes. These are examples of the required protocol, not a mock server or an implemented authorization/recovery engine. Use the same examples in later backend tests.
 
-## Backend acceptance checklist (not yet verified)
+## Backend acceptance checklist (Task 5 local evidence linked below)
 
-- [ ] Owner and route-store isolation for every action, referenced ID and lookup/replay.
-- [ ] Runtime money/quantity/recipe validation and exact aggregation with overflow rejection.
-- [ ] Concurrent stock competition blocks direct shortages without partial persistence.
-- [ ] Concurrent identical attempts and process-crash recovery produce only one sale/payment/movement set.
-- [ ] Response loss and confirmed replay after quote expiry recover the original sale.
-- [ ] New duplicate-reference warnings require review but never force a unique reference.
+- [x] Owner and route-store isolation for every action, referenced ID and lookup/replay.
+- [x] Runtime money/quantity/recipe validation and exact aggregation with overflow rejection.
+- [x] Concurrent stock competition blocks direct shortages without partial persistence.
+- [x] Concurrent identical attempts and process-crash recovery produce only one sale/payment/movement set.
+- [x] Response loss and confirmed replay after quote expiry recover the original sale.
+- [x] New duplicate-reference warnings require review but never force a unique reference.
 - [ ] Full reversal/restock applies once and preserves original snapshots after catalog edits.
 
 ## Handoff
 
-User confirmed business-rule agreement on 2026-10-30. Task 1 is contract-ready for development; this is not an integrated POS. Tax treatment is unconfigured and blocks live use. No business route, persistence, provider integration or checkout screen is implemented. Task 2 is the next work package.
+User confirmed business-rule agreement on 2026-10-30. Tasks 1–5 are implemented locally, including checkout and interruption recovery. See [Task 5 verification](../verification/2026-11-07-task-5-payment-recovery.md) for current evidence and external checks. Task 6 sales management/corrections is next. Tax treatment and deployment readiness remain unresolved; no provider integration is implied.
 
 ## Verification record — 2026-10-29
 
