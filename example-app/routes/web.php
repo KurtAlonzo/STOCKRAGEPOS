@@ -8,6 +8,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\SaleReversalController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\StockOperationController;
 use App\Http\Controllers\Teams\TeamInvitationController;
@@ -24,6 +25,9 @@ Route::prefix('{current_team}')->middleware(['auth', 'verified', EnsureTeamMembe
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('sales', [SalesController::class, 'index'])->name('sales.index');
     Route::get('sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
+    Route::post('sales/{sale}/reversals', [SaleReversalController::class, 'store'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('sales.reversals.store');
+    Route::get('sales/{sale}/reversal', [SaleReversalController::class, 'show'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('sales.reversals.show');
+    Route::get('sales/{sale}/reversal-attempts/{key}', [SaleReversalController::class, 'attempt'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('sales.reversal-attempts.show');
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
     Route::get('pos/catalog', [PosController::class, 'catalog'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('pos.catalog');
     Route::post('pos/quotes', [PosController::class, 'quote'])->defaults('preserve_current_team', true)->middleware(EnsurePosActor::class)->name('pos.quotes.store');

@@ -101,3 +101,15 @@ export type SaleShowProps = {
     }[];
     returnTo: { filters: SalesIndexProps['filters']; page: number };
 };
+
+export type CurrentReversalResult =
+    | { status: 'not_recorded' }
+    | { status: 'recorded'; reversal: SaleReversal };
+export type ReversalAttemptResult = {
+    saleId: number;
+    idempotencyKey: string;
+} & (
+    | { status: 'not_found' | 'pending' }
+    | { status: 'recorded'; reversal: SaleReversal }
+    | { status: 'rejected'; error: import('./business').ContractError }
+);
