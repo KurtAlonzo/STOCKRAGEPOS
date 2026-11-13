@@ -180,4 +180,12 @@ Tasks 1–3 provide agreed contracts, the owner-only branded shell, persisted ca
 
 Task 4 now provides the integrated mixed cart, live filtered/paginated picker, authoritative store/actor-scoped quotes, named aggregate projections, direct-shortage blocking, recipe warnings, responsive checkout shell and dirty navigation protection. Independent review fixes exact large-price display, removed-modifier repair, invalid-quantity merge retention and portrait close-target sizing. See [verification and Task 5 handoff](verification/2026-10-31-task-4-mixed-cart.md) for current checks, screenshots and limits.
 
-Next is Task 5: durable user/store drafts, tab conflicts, payment entry, final quote acknowledgment, atomic completion, idempotency/attempt lookup and uncertain-result recovery. Payments remain unavailable; sales/refunds, global stock history, real dashboard aggregates and business settings remain future tasks. Live-sales/deployment readiness is not claimed.
+Task 5 implements durable user/store drafts, tab conflicts, cash/GCash/Maya payment entry, final quote acknowledgment, atomic completion, idempotency/attempt lookup and uncertain-result recovery. The November 9 carryover verification adds integrated coverage and fixes New Sale ownership and review focus return. See [Task 5 evidence](verification/2026-11-07-task-5-payment-recovery.md). Sales/refunds (Task 6), global stock history, real dashboard aggregates and business settings remain future tasks. Live-sales/deployment readiness is not claimed.
+
+## Task 6 update — 2026-11-09
+
+Task 6 is implemented and locally verified: scoped sales history/detail, original versus refunded/net amounts, one durable full-sale refund with actual method/reference, explicit eligible retail/direct-add-on returns, interruption/account/tab recovery, and optional read-only A5 receipts. Task 5 carryover gaps were closed first, including New Sale ownership and payment-review focus fixes. Final review also fixed refund form loss during same-account focus revalidation.
+
+Evidence: [Task 6 sales corrections](verification/2026-11-07-task-6-sales-corrections.md). Final results: 178 PHP tests / 1,295 assertions, 64 frontend tests, 35 browser tests; TypeScript, PHPStan, Pint, formatting/lint and production build passed. Three new migrations are included; the development database was not migrated. External device, screen-reader, native-print, production database and deployment/tax decisions remain release checks.
+
+Next is Task 7: global stock history, real dashboard aggregates and business settings. No Task 7 completion or live-selling readiness is claimed.

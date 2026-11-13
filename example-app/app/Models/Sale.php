@@ -4,14 +4,29 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property array<int, array<string, mixed>> $lines_json
  * @property CarbonImmutable $occurred_at
+ * @property-read SaleReversal|null $reversal
+ * @property-read Payment $payment
  */
 class Sale extends Model
 {
     protected $guarded = ['id'];
+
+    /** @return HasOne<Payment, $this> */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /** @return HasOne<SaleReversal, $this> */
+    public function reversal(): HasOne
+    {
+        return $this->hasOne(SaleReversal::class);
+    }
 
     protected function casts(): array
     {

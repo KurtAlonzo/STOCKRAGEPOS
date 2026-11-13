@@ -34,6 +34,8 @@ export type StockMovement = {
     unit: BaseUnit;
     reason: string;
     actorId: number;
+    actorName: string;
+    itemName: string;
     occurredAt: string;
     sourceType: 'receipt' | 'adjustment' | 'sale' | 'reversal';
     sourceId: number;

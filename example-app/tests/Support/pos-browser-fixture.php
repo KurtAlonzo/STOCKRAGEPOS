@@ -1,11 +1,16 @@
 <?php
 
 use App\Actions\Catalog\SaveCatalogItem;
+use App\Actions\Pos\CompleteCheckout;
+use App\Actions\Pos\CreateQuote;
+use App\Models\CatalogItem;
 use App\Models\InventoryItem;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 if (PHP_SAPI !== 'cli' || getenv('APP_ENV') !== 'testing' || ! getenv('TASK5_STORAGE')) {
     throw new RuntimeException('Testing CLI only');
@@ -44,11 +49,47 @@ if ($command === 'reset') {
     User::factory()->create(['name' => 'Other Owner', 'email' => 'other@example.test', 'password' => 'password']);
     echo json_encode(['slug' => $u->currentTeam->slug, 'actorId' => $u->id, 'storeId' => $u->current_team_id]);
 } elseif ($command === 'counts') {
-    echo json_encode(['sales' => DB::table('sales')->count(), 'payments' => DB::table('payments')->count(), 'movements' => DB::table('stock_movements')->count(), 'attempts' => DB::table('checkout_attempts')->get()->toArray()]);
+    echo json_encode(['sales' => DB::table('sales')->count(), 'payments' => DB::table('payments')->count(), 'movements' => DB::table('stock_movements')->count(), 'attempts' => DB::table('checkout_attempts')->get()->toArray(), 'reversals' => DB::table('sale_reversals')->get()->toArray(), 'reversalAttempts' => DB::table('reversal_attempts')->get()->toArray(), 'stock' => DB::table('inventory_items')->get()->toArray()]);
 } elseif ($command === 'price') {
     DB::table('catalog_items')->where('sku', 'W')->update(['price_minor' => 5500, 'revision' => 2]);
 } elseif ($command === 'disable') {
     DB::table('catalog_items')->where('sku', 'W')->update(['active' => false]);
+} elseif ($command === 'recipe') {
+    DB::table('recipe_components')->where('quantity_thousandths', 100000)->update(['quantity_thousandths' => 125000]);
+    DB::table('catalog_items')->where('sku', 'B')->increment('revision');
+    DB::table('inventory_items')->where('name', 'Beef')->update(['balance_thousandths' => 0]);
+} elseif ($command === 'off-page') {
+    $u = User::where('email', 'task5@example.test')->firstOrFail();
+    for ($i = 0; $i < 26; $i++) {
+        (new SaveCatalogItem)->handle($u->currentTeam, $u, ['name' => sprintf('A filler %02d', $i), 'sku' => 'F'.$i, 'kind' => 'retail', 'priceMinor' => 100, 'categoryId' => null, 'active' => true, 'allowedAddonIds' => [], 'lowStockThreshold' => null]);
+    }
+} elseif ($command === 'second-store') {
+    $u = User::where('email', 'task5@example.test')->firstOrFail();
+    $store = Team::factory()->create(['name' => 'Second Browser Store']);
+    $store->members()->attach($u, ['role' => 'owner']);
+    echo json_encode(['slug' => $store->slug]);
+} elseif ($command === 'long-sale') {
+    $u = User::where('email', 'task5@example.test')->firstOrFail();
+    DB::table('catalog_items')->where('sku', 'B')->update(['name' => 'Burger '.str_repeat('long historical product name ', 7)]);
+    DB::table('catalog_items')->where('sku', 'CH')->update(['name' => 'Cheese '.str_repeat('long historical modifier ', 7)]);
+    $burger = CatalogItem::where('sku', 'B')->firstOrFail();
+    $cheese = CatalogItem::where('sku', 'CH')->firstOrFail();
+    InventoryItem::whereKey($cheese->stock_item_id)->update(['balance_thousandths' => 100000]);
+    $lines = [];
+    for ($i = 0; $i < 80; $i++) {
+        $lines[] = ['id' => (string) Str::uuid(), 'productId' => $burger->id, 'quantity' => 1, 'addonIds' => [$cheese->id]];
+    }
+    $payment = ['method' => 'cash', 'tenderedMinor' => 929000];
+    $quote = (new CreateQuote)->handle($u->currentTeam, $u, ['lines' => $lines, 'payment' => $payment]);
+    $result = (new CompleteCheckout)->handle($u->currentTeam, $u, ['idempotencyKey' => (string) Str::uuid(), 'quoteId' => $quote['id'], 'quoteRevision' => $quote['revision'], 'lines' => $lines, 'payment' => $payment, 'acknowledgedWarningIds' => array_column($quote['warnings'], 'id')]);
+    if ($result['status'] !== 200) {
+        throw new RuntimeException(json_encode($result));
+    }
+    echo json_encode(['slug' => $u->currentTeam->slug, 'saleId' => $result['body']['sale']['id']]);
+} elseif ($command === 'overflow-water') {
+    DB::table('inventory_items')->where('name', 'Water')->update(['balance_thousandths' => 9007199254740000]);
+} elseif ($command === 'normalize-water') {
+    DB::table('inventory_items')->where('name', 'Water')->update(['balance_thousandths' => 1000]);
 } elseif ($command === 'evict') {
     app('cache')->flush();
 } else {

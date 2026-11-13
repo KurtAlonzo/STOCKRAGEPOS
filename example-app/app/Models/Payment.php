@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property array<string, mixed> $input_json
@@ -12,6 +13,12 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $guarded = ['id'];
+
+    /** @return BelongsTo<Sale, $this> */
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class);
+    }
 
     protected function casts(): array
     {

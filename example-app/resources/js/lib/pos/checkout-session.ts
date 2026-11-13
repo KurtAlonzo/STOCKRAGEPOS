@@ -331,6 +331,18 @@ export function createCheckoutSession(
                 recover();
             } else if (r?.attempt?.state === 'rejected')
                 emit({ state: 'rejected', error: r.attempt.error });
+            else {
+                stop();
+                emit({
+                    state: 'draft',
+                    sale: null,
+                    error: null,
+                    message: '',
+                    lookup: null,
+                    busy: false,
+                    durable: false,
+                });
+            }
         },
         recover,
         checkAgain,

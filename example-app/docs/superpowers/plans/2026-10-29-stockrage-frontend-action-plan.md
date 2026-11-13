@@ -151,28 +151,32 @@ Reuse current form, dialog, button, badge, feedback, and layout patterns. Add sh
 
 ## Task 5: Complete payments and recover safely
 
+**Status:** Locally verified 2026-11-09; [evidence and external release checks](../../verification/2026-11-07-task-5-payment-recovery.md).
+
 **Depends on:** Task 4 plus backend quote/completion/attempt-lookup support. **Files:** payment panel, draft hook/storage, POS page, checkout feature/integration tests.
 
-- [ ] Persist a versioned draft keyed by authenticated user and store. Restore editable cart contents after refresh; re-fetch product data and revalidate before completion. Handle missing/disabled products and changed prices/recipes with an explanation.
-- [ ] Separate drafts on store changes. Clear in-memory cart on logout and prevent another user seeing the previous owner's draft. Use a documented same-origin draft-storage policy; do not store payment credentials or sensitive customer data.
-- [ ] Detect conflicting tabs editing/submitting the same draft and require an explicit recovery/reload action. The same checkout attempt must keep its operation key through refresh and uncertain responses.
-- [ ] Add cash tender/change and enabled external payment methods. Digital payment confirmation means the owner has checked receipt outside the app; show that meaning clearly and capture references according to the contract.
-- [ ] Disable completion for empty carts, invalid quantities, insufficient cash, direct-stock shortages, unconfirmed external receipt, or known offline state. A browser connectivity flag is only a hint; handle actual network failures too.
-- [ ] Quote/revalidate before final confirmation; require acknowledgment if authoritative prices or material warnings change. Do not optimistically announce success or clear the draft while submitting.
-- [ ] Implement submitting, confirmed, rejected, and unknown-result screens. For unknown results, look up the existing attempt and offer same-key retry only under the agreed backend contract; never generate a fresh attempt automatically.
-- [ ] On confirmed completion, show transaction reference, line items, total, recorded payment, and cash change. Clear the completed draft and offer New Sale. Optional View/Print Receipt is secondary.
+- [x] Persist a versioned draft keyed by authenticated user and store. Restore editable cart contents after refresh; re-fetch product data and revalidate before completion. Handle missing/disabled products and changed prices/recipes with an explanation.
+- [x] Separate drafts on store changes. Clear in-memory cart on logout and prevent another user seeing the previous owner's draft. Use a documented same-origin draft-storage policy; do not store payment credentials or sensitive customer data.
+- [x] Detect conflicting tabs editing/submitting the same draft and require an explicit recovery/reload action. The same checkout attempt must keep its operation key through refresh and uncertain responses.
+- [x] Add cash tender/change and enabled external payment methods. Digital payment confirmation means the owner has checked receipt outside the app; show that meaning clearly and capture references according to the contract.
+- [x] Disable completion for empty carts, invalid quantities, insufficient cash, direct-stock shortages, unconfirmed external receipt, or known offline state. A browser connectivity flag is only a hint; handle actual network failures too.
+- [x] Quote/revalidate before final confirmation; require acknowledgment if authoritative prices or material warnings change. Do not optimistically announce success or clear the draft while submitting.
+- [x] Implement submitting, confirmed, rejected, and unknown-result screens. For unknown results, look up the existing attempt and offer same-key retry only under the agreed backend contract; never generate a fresh attempt automatically.
+- [x] On confirmed completion, show transaction reference, line items, total, recorded payment, and cash change. Clear the completed draft and offer New Sale. Optional View/Print Receipt is secondary.
 
 **Proof:** one submission creates one sale, one payment record, and the intended stock movements. Automated integration coverage must simulate a server commit followed by response loss, repeated requests, refresh during submission, price changes, store/user draft isolation, and competing stock purchases. A disconnected browser cannot present an unrecorded sale as complete.
 
 ## Task 6: Review and correct completed sales
 
+**Status:** Implemented and locally verified 2026-11-09; [sales corrections evidence and release limits](../../verification/2026-11-07-task-6-sales-corrections.md).
+
 **Depends on:** Task 5. **Files:** sales pages, correction dialog, receipt component, backend reversal and stock-history actions/tests.
 
-- [ ] Build sales history with reference/date/payment/status filters and persistent pagination. Provide transaction detail with item/modifier snapshots, original totals, payment details, and linked stock movements.
-- [ ] Add full-sale reversal/refund with required reason and explicit confirmation of the external money return. The app records that action; it does not transfer funds.
-- [ ] Require an explicit restockable selection for returned retail items. Do not automatically restore consumed food ingredients or supplies. A physical inventory correction is a separate reasoned stock action.
-- [ ] Preserve original sales, payments, prices, recipe deductions, and linked reversals. Stop repeated corrections and duplicate restocking; show original and adjusted financial status without deleting history.
-- [ ] Provide the receipt on screen and optional A5 browser print/Save as PDF. Isolate print styling from the application theme/chrome; cancellation or printer failure leaves the confirmed sale intact.
+- [x] Build sales history with reference/date/payment/status filters and persistent pagination. Provide transaction detail with item/modifier snapshots, original totals, payment details, and linked stock movements.
+- [x] Add full-sale reversal/refund with required reason and explicit confirmation of the external money return. The app records that action; it does not transfer funds.
+- [x] Require an explicit restockable selection for returned retail items. Do not automatically restore consumed food ingredients or supplies. A physical inventory correction is a separate reasoned stock action.
+- [x] Preserve original sales, payments, prices, recipe deductions, and linked reversals. Stop repeated corrections and duplicate restocking; show original and adjusted financial status without deleting history.
+- [x] Provide the receipt on screen and optional A5 browser print/Save as PDF. Isolate print styling from the application theme/chrome; cancellation or printer failure leaves the confirmed sale intact.
 
 **Proof:** a retail return can restore eligible stock once, while a food refund leaves used ingredients deducted. Financial totals and history remain explainable after reversal. Check original sale snapshots after catalog edits, repeated reversal submissions, optional print cancellation, and store isolation.
 

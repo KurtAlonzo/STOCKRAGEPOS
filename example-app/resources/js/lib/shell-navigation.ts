@@ -5,6 +5,7 @@ import { index as products } from '@/routes/products';
 import { index as categories } from '@/routes/categories';
 import { edit } from '@/routes/profile';
 import { index as pos } from '@/routes/pos';
+import { index as sales } from '@/routes/sales';
 import type { Team, NavItem } from '@/types';
 export function getShellNavItems(team: Team | null): NavItem[] {
     return [
@@ -18,6 +19,11 @@ export function getShellNavItems(team: Team | null): NavItem[] {
                   {
                       title: 'POS',
                       href: pos(team.slug),
+                      icon: LayoutGrid,
+                  },
+                  {
+                      title: 'Sales',
+                      href: sales(team.slug),
                       icon: LayoutGrid,
                   },
                   {

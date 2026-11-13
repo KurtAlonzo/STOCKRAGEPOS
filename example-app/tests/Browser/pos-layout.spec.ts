@@ -18,7 +18,35 @@ test('desktop tablet and phone notice retain layout and keyboard review', async 
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    const directory = 'docs/verification/screenshots/2026-11-06';
+    await expect(
+        page.getByRole('button', { name: 'Review payment', exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    const confirm = page.getByRole('button', {
+        name: 'Confirm payment recording',
+    });
+    for (
+        let step = 0;
+        step < 5 &&
+        !(await confirm.evaluate((el) => el === document.activeElement));
+        step++
+    ) {
+        await page.keyboard.press('Tab');
+    }
+    await expect(confirm).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(
+        page.getByRole('heading', { name: 'Sale recorded' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+        page.getByRole('link', { name: 'View sale', exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'New Sale' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: /Water PHP/ })).toBeEnabled();
+    const directory = 'docs/verification/screenshots/2026-11-09';
     mkdirSync(directory, { recursive: true });
     for (const [width, height] of [
         [1440, 900],

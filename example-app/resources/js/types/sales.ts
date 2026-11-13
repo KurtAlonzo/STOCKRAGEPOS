@@ -42,6 +42,8 @@ export type ReversalInput = {
     idempotencyKey: string;
     reason: string;
     refundConfirmed: true;
+    refundMethod: PaymentInput['method'];
+    refundReference: string | null;
     restock: { inventoryItemId: number; quantity: DecimalQuantity }[];
 };
 export type SaleReversal = ReversalInput & {
@@ -49,6 +51,7 @@ export type SaleReversal = ReversalInput & {
     saleId: number;
     totalMinor: MinorUnits;
     actorId: number;
+    actorName: string;
     occurredAt: string;
 };
 export type Sale = {
@@ -68,7 +71,7 @@ export type Sale = {
 };
 export type SalesIndexProps = {
     business: BusinessContext;
-    sales: PageSlice<Sale>;
+    sales: PageSlice<SaleSummary>;
     filters: {
         reference: string;
         dateFrom: string | null;
@@ -77,4 +80,36 @@ export type SalesIndexProps = {
         status: Sale['status'] | null;
     };
 };
-export type SaleShowProps = { business: BusinessContext; sale: Sale };
+export type SaleSummary = Pick<
+    Sale,
+    'id' | 'reference' | 'status' | 'occurredAt' | 'totalMinor'
+> & {
+    paymentMethod: PaymentInput['method'];
+    refundedMinor: number;
+    netMinor: number;
+};
+export type SaleShowProps = {
+    business: BusinessContext;
+    sale: Sale;
+    storeName: string;
+    restockCandidates: {
+        inventoryItemId: number;
+        name: string;
+        unit: 'each';
+        maxQuantity: DecimalQuantity;
+        active: boolean;
+    }[];
+    returnTo: { filters: SalesIndexProps['filters']; page: number };
+};
+
+export type CurrentReversalResult =
+    | { status: 'not_recorded' }
+    | { status: 'recorded'; reversal: SaleReversal };
+export type ReversalAttemptResult = {
+    saleId: number;
+    idempotencyKey: string;
+} & (
+    | { status: 'not_found' | 'pending' }
+    | { status: 'recorded'; reversal: SaleReversal }
+    | { status: 'rejected'; error: import('./business').ContractError }
+);
