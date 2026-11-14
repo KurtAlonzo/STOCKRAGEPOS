@@ -64,8 +64,8 @@ class DemoSalesSeeder extends Seeder
         }
 
         // Leave one product low and one out of stock so the warnings are visible in the demo.
-        $low = Product::where('name', 'Octobits')->first();
-        $out = Product::where('name', 'Overload Takoyaki')->first();
+        $low = Product::where('name', "Bacon N' Cheese - Solo (5 pcs)")->first();
+        $out = Product::where('name', 'Overload - Solo (5 pcs)')->first();
         if ($low) {
             $stock->change($low, 8 - $low->fresh()->stock, 'adjustment', 'Demo: low stock');
         }

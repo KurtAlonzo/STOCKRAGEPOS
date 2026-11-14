@@ -13,7 +13,7 @@ Settings > **Theme color** lets you pick the accent: Stockrage Red (default, fro
 
 * **Plain, friendly sidebar.** No glow, gradients, icon tiles, capital-letter headings, flag stripes or Tagalog labels. Just sentence-case names (Dashboard, POS, Products, Sales history, Stock history, Reports, Settings) with the current page highlighted.
 * **Says things in plain words.** Under Products it tells you "3 running low" in amber. At the bottom is a small **Today so far** card (total sales and number of sales, click it to open Reports) and a greeting with your name ("Good evening, Admin").
-* **Hide menu.** The clearly labeled **Hide menu** button above the footer shrinks the sidebar to an icon rail (hover an icon to see its name); the same button then shows the menu again. It remembers your choice in this browser. On phones the menu slides in.
+* **Hide menu.** The clearly labeled **Hide menu** button below the theme toggle shrinks the sidebar to an icon rail (hover an icon to see its name); the same button then shows the menu again. It remembers your choice in this browser. On phones the menu slides in.
 * **Logo without a white box.** `public/images/stockrage-logo-light.png` is your logo with the black parts ("POS" and the line) turned white, so it sits directly on the dark sidebar and login card. Printed receipts still use the original logo on white paper.
 * Includes everything from version 3 (receipts, cashier name, void reason, cost and profit, product art).
 
@@ -23,7 +23,7 @@ Settings > **Theme color** lets you pick the accent: Stockrage Red (default, fro
 * **Receipts.** After every sale the POS shows a **Print receipt** link; the receipt page is also on every sale's details page. It is made for an 80 mm receipt printer. Set the footer message in Settings.
 * **Cashier name.** Every sale remembers who made it (shown in Sales History, sale details and the receipt).
 * **Void reason.** Voiding asks for an optional reason; it is saved with who voided it and appears in Stock History.
-* **Cost price and profit.** Each product has a *Cost per piece*. Reports show Profit (also in the CSV) and the Dashboard shows this month's profit. The cost is copied into each sale, so changing a cost later never changes old profit. The 5 sample products already have costs.
+* **Cost price and profit.** Each product has a *Cost per piece*. Reports show Profit (also in the CSV) and the Dashboard shows this month's profit. The cost is copied into each sale, so changing a cost later never changes old profit. Enter your own costs for the seeded menu products.
 * **Product pictures.** Products without a photo show a drawn takoyaki picture instead of a letter. Upload real photos any time from the product form.
 
 **Already ran an older version?** Just run `php artisan migrate`: it adds the new columns and keeps your data. Old sales show "-" as cashier and have no cost, so their profit equals their sales.
@@ -42,7 +42,7 @@ php artisan key:generate
 # Create an empty MySQL database called  takoyaki_pos
 # (Laragon: Menu > MySQL > Create database). If your MySQL user/password is not root/empty, edit DB_USERNAME / DB_PASSWORD in .env.
 
-php artisan migrate --seed          # tables + admin login + settings + 5 sample products
+php artisan migrate --seed          # tables + admin login + settings + 12 menu products
 php artisan storage:link            # needed for product images
 npm install
 ```
@@ -59,7 +59,7 @@ php artisan serve
 Open <http://127.0.0.1:8000> and log in with **admin@stockrage.test / password**.
 Change the password right away (sidebar, your name, Profile).
 
-**Demo data (Part 9):** `php artisan db:seed --class=DemoSalesSeeder` adds about 75 days of fake sales (made through the real checkout code), so the charts and reports are not empty. It leaves Octobits low and Overload sold out so the warnings show. It skips itself if sales already exist.
+**Demo data (Part 9):** `php artisan db:seed --class=DemoSalesSeeder` adds about 75 days of fake sales (made through the real checkout code), so the charts and reports are not empty. It leaves Bacon N' Cheese Solo low and Overload Solo sold out so the warnings show. It skips itself if sales already exist.
 
 **Tests:** `php artisan test` runs the whole suite on in-memory SQLite, so it never touches your MySQL data. (If it complains about SQLite, enable `pdo_sqlite` in `php.ini`; Laragon has it on.)
 

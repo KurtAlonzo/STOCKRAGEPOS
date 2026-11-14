@@ -81,17 +81,14 @@
             <p class="mt-2 truncate text-sm text-ink-400" :class="collapsed ? 'lg:hidden' : ''">{{ $business }}</p>
         </div>
 
-        {{-- Links --}}
-        <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-2" :class="collapsed ? 'lg:overflow-visible lg:px-2' : ''" aria-label="Main">
-            @foreach($links as [$route, $label, $icon, $pattern, $hint])
-                <x-sidebar-link :href="route($route)" :icon="$icon" :active="request()->routeIs($pattern)" :hint="$hint">{{ $label }}</x-sidebar-link>
-            @endforeach
-        </nav>
+        <div class="px-3 pb-2" :class="collapsed ? 'lg:px-2' : ''">
+            <x-mode-toggle class="h-8 w-full px-3" x-bind:class="collapsed ? 'lg:justify-center lg:px-0' : ''" />
+        </div>
 
         {{-- Hide / show the menu (desktop) --}}
         <div class="hidden px-3 pb-2 lg:block" :class="collapsed ? 'lg:px-2' : ''">
             <button type="button" @click="toggle()"
-                    class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-400 transition hover:bg-ink-850 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                    class="flex h-8 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-ink-400 transition hover:bg-ink-850 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                     :class="collapsed ? 'lg:justify-center lg:px-0' : ''"
                     :aria-label="collapsed ? 'Show menu' : 'Hide menu'" :title="collapsed ? 'Show menu' : 'Hide menu'">
                 <svg class="h-5 w-5 shrink-0 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
@@ -99,9 +96,12 @@
             </button>
         </div>
 
-        <div class="px-3 pb-2" :class="collapsed ? 'lg:px-2' : ''">
-            <x-mode-toggle class="w-full px-3 py-2" x-bind:class="collapsed ? 'lg:justify-center lg:px-0' : ''" />
-        </div>
+        {{-- Links --}}
+        <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-2" :class="collapsed ? 'lg:overflow-visible lg:px-2' : ''" aria-label="Main">
+            @foreach($links as [$route, $label, $icon, $pattern, $hint])
+                <x-sidebar-link :href="route($route)" :icon="$icon" :active="request()->routeIs($pattern)" :hint="$hint">{{ $label }}</x-sidebar-link>
+            @endforeach
+        </nav>
 
         {{-- Footer: today so far, who is logged in --}}
         <div class="border-t border-ink-700 p-3" :class="collapsed ? 'lg:px-2' : ''">

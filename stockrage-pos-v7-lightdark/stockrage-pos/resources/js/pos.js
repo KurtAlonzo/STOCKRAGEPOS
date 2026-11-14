@@ -28,6 +28,20 @@ export default (initialProducts, checkoutUrl) => ({
         );
     },
 
+    get catalog() {
+        const groups = new Map();
+        for (const product of this.filtered) {
+            const match = product.category === 'Takoyaki' &&
+                product.name.match(/^(.+) - ((?:Solo|Barkada|Family Tray|Party Tray) \(\d+ pcs\))$/);
+            const key = match ? `flavor:${match[1]}` : product.id;
+            if (!groups.has(key)) {
+                groups.set(key, { key, name: match ? match[1] : product.name, sizes: [] });
+            }
+            groups.get(key).sizes.push({ product, label: match ? match[2] : null });
+        }
+        return [...groups.values()];
+    },
+
     isLow(p) {
         return p.stock > 0 && p.stock <= p.threshold;
     },
@@ -42,14 +56,14 @@ export default (initialProducts, checkoutUrl) => ({
     },
 
     // ---- cart ---------------------------------------------------------
-    add(p) {
+    add(p, qty = 1) {
         this.message = null;
-        if (p.stock <= 0) return;
+        if (this.busy || !Number.isInteger(qty) || qty < 1 || qty > this.left(p)) return;
         const found = this.cart.find((c) => c.product_id === p.id);
         if (found) {
-            if (found.qty < p.stock) found.qty++;
+            found.qty += qty;
         } else {
-            this.cart.push({ product_id: p.id, name: p.name, price: p.price, qty: 1 });
+            this.cart.push({ product_id: p.id, name: p.name, price: p.price, qty });
         }
     },
 
