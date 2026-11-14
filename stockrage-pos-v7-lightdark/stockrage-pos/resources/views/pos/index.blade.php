@@ -1,8 +1,8 @@
 <x-app-layout title="POS" wide>
-    <x-page-header title="Point of Sale" subtitle="Tap a product to add it to the order.">
+    <x-page-header title="Point of Sale" subtitle="Choose a size and quantity to add it to the order.">
     </x-page-header>
 
-    <div x-data='pos(@json($products), @json(route("pos.checkout")))' class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_26rem]">
+    <div x-data="pos({{ Js::from($products) }}, {{ Js::from(route('pos.checkout')) }})" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_26rem]">
 
         {{-- ============ Product grid ============ --}}
         <section>
@@ -20,27 +20,58 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
-                <template x-for="p in filtered" :key="p.id">
-                    <button type="button" @click="add(p)" :disabled="p.stock <= 0"
-                            class="group relative flex flex-col overflow-hidden rounded-xl border bg-ink-900 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                            :class="p.stock <= 0 ? 'cursor-not-allowed border-ink-700 opacity-50' : 'border-ink-700 hover:border-brand-600/70 hover:bg-ink-850 active:scale-[.98]'">
-                        <div class="relative aspect-[4/3] w-full bg-ink-800">
-                            <template x-if="p.image"><img :src="p.image" :alt="p.name" class="h-full w-full object-cover"></template>
-                            <template x-if="!p.image"><x-takoyaki-art class="h-full w-full" /></template>
-                            <span x-show="p.stock <= 0" class="badge-out absolute left-2 top-2 bg-ink-950/80">Out of stock</span>
-                            <span x-show="isLow(p)" class="badge-low absolute left-2 top-2 bg-ink-950/80">Low</span>
-                            <span x-show="inCart(p) > 0" class="num absolute right-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-brand-600 px-2 text-xs font-bold text-white" x-text="inCart(p)"></span>
-                        </div>
-                        <div class="flex flex-1 flex-col justify-between gap-1 p-3">
-                            <p class="text-sm font-semibold leading-snug text-fg" x-text="p.name"></p>
-                            <div class="flex items-end justify-between">
-                                <p class="num text-base font-bold text-brand-300" x-text="peso(p.price)"></p>
-                                <p class="num text-xs" :class="p.stock <= 0 ? 'text-rose-400' : (isLow(p) ? 'text-amber-400' : 'text-ink-400')"
-                                   x-text="p.stock <= 0 ? 'None left' : p.stock + ' left'"></p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+                <template x-for="group in catalog" :key="group.key">
+                    <div>
+                        <template x-if="group.sizes[0].label">
+                            <form class="card flex h-full flex-col gap-3 p-4"
+                                  x-data="{ sizeId: '', qty: 1, get selected() { return group.sizes.find(({ product }) => String(product.id) === this.sizeId)?.product }, get canAdd() { return this.selected && Number.isInteger(this.qty) && this.qty > 0 && this.qty <= this.left(this.selected) && !this.busy } }"
+                                  @submit.prevent="if (canAdd) { add(selected, qty); sizeId = ''; qty = 1 }">
+                                <h2 class="font-semibold text-fg" x-text="group.name"></h2>
+                                <label class="block text-sm">
+                                    Size
+                                    <select class="input mt-1 w-full" x-model="sizeId" @change="qty = 1" required>
+                                        <option value="">Choose a size</option>
+                                        <template x-for="size in group.sizes" :key="size.product.id">
+                                            <option :value="String(size.product.id)" :disabled="left(size.product) <= 0"
+                                                    x-text="size.label + ' · ' + peso(size.product.price) + (left(size.product) <= 0 ? ' · Out of stock' : ' · ' + left(size.product) + ' left')"></option>
+                                        </template>
+                                    </select>
+                                </label>
+                                <label class="block text-sm">
+                                    Quantity
+                                    <input type="number" class="input mt-1 w-full" min="1" step="1"
+                                           :max="selected ? left(selected) : null" x-model.number="qty" required>
+                                </label>
+                                <p class="num text-sm" aria-live="polite" x-show="selected"
+                                   x-text="selected && Number.isInteger(qty) && qty > 0 ? peso(selected.price) + ' × ' + qty + ' = ' + peso(Math.round(selected.price * 100) * qty / 100) : ''"></p>
+                                <button type="submit" class="btn-primary mt-auto disabled:opacity-50" :disabled="!canAdd">Add to cart</button>
+                            </form>
+                        </template>
+                        <template x-if="!group.sizes[0].label">
+                            <div x-data="{ p: group.sizes[0].product }">
+                            <button type="button" @click="add(p)" :disabled="p.stock <= 0"
+                                    class="group relative flex flex-col overflow-hidden rounded-xl border bg-ink-900 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                                    :class="p.stock <= 0 ? 'cursor-not-allowed border-ink-700 opacity-50' : 'border-ink-700 hover:border-brand-600/70 hover:bg-ink-850 active:scale-[.98]'">
+                                <div class="relative aspect-[4/3] w-full bg-ink-800">
+                                    <template x-if="p.image"><img :src="p.image" :alt="p.name" class="h-full w-full object-cover"></template>
+                                    <template x-if="!p.image"><x-takoyaki-art class="h-full w-full" /></template>
+                                    <span x-show="p.stock <= 0" class="badge-out absolute left-2 top-2 bg-ink-950/80">Out of stock</span>
+                                    <span x-show="isLow(p)" class="badge-low absolute left-2 top-2 bg-ink-950/80">Low</span>
+                                    <span x-show="inCart(p) > 0" class="num absolute right-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-brand-600 px-2 text-xs font-bold text-white" x-text="inCart(p)"></span>
+                                </div>
+                                <div class="flex flex-1 flex-col justify-between gap-1 p-3">
+                                    <p class="text-sm font-semibold leading-snug text-fg" x-text="p.name"></p>
+                                    <div class="flex items-end justify-between">
+                                        <p class="num text-base font-bold text-brand-300" x-text="peso(p.price)"></p>
+                                        <p class="num text-xs" :class="p.stock <= 0 ? 'text-rose-400' : (isLow(p) ? 'text-amber-400' : 'text-ink-400')"
+                                           x-text="p.stock <= 0 ? 'None left' : p.stock + ' left'"></p>
+                                    </div>
+                                </div>
+                            </button>
                             </div>
-                        </div>
-                    </button>
+                        </template>
+                    </div>
                 </template>
             </div>
 
