@@ -1,3 +1,4 @@
+@php($pageIds = $products->pluck('id')->map(fn ($id) => (string) $id)->values()->all())
 <x-app-layout title="Products">
     <x-page-header title="Products" subtitle="Manage your menu and stock levels. Every stock change is recorded.">
         <a href="{{ route('products.create') }}" class="btn-primary"><x-icon name="plus" class="h-4 w-4" /> Add product</a>
@@ -8,6 +9,10 @@
             p: { id: null, name: '', stock: 0, addUrl: '', adjustUrl: '' },
             open(kind, product) { this.p = product; this.modal = kind; this.$nextTick(() => this.$refs[kind + 'Input']?.focus()); },
             close() { this.modal = null; },
+            ids: [],               // ticked product ids
+            pageIds: @js($pageIds),
+            get allTicked() { return this.pageIds.length ? this.pageIds.every(function (id) { return this.ids.includes(id); }, this) : false; },
+            toggleAll() { this.ids = this.allTicked ? [] : this.pageIds.slice(); },
         }" @keydown.escape.window="close()">
 
         {{-- Filters --}}
@@ -31,23 +36,45 @@
             @endif
         </form>
 
+        {{-- Bulk bar: tick products, type one quantity, add it to all of them --}}
+        <form id="bulk-form" method="POST" action="{{ route('products.bulk-add-stock') }}"
+              class="card card-pad mb-4 flex flex-wrap items-end gap-x-4 gap-y-3 transition"
+              :class="ids.length ? 'border-brand-600/60' : ''">
+            @csrf
+            <div>
+                <p class="label">Add stock to many products</p>
+                <p class="text-sm text-ink-300"><span class="num font-bold text-fg" x-text="ids.length"></span> selected<span x-show="!ids.length" class="text-ink-400"> · check the boxes in the list below</span></p>
+            </div>
+            <div class="w-32">
+                <label class="label" for="bulk_quantity">Quantity</label>
+                <input id="bulk_quantity" type="number" name="quantity" min="1" step="1" required class="input num" placeholder="e.g. 50">
+            </div>
+            <div class="min-w-[12rem] flex-1">
+                <label class="label" for="bulk_reason">Note (optional)</label>
+                <input id="bulk_reason" type="text" name="reason" maxlength="255" class="input" placeholder="e.g. Delivery from supplier">
+            </div>
+            <button class="btn-primary" :disabled="!ids.length"><x-icon name="plus" class="h-4 w-4" /> Add stock to <span class="num" x-text="ids.length"></span></button>
+        </form>
+
         <div class="card overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="tbl">
                     <thead>
                     <tr>
+                        <th class="w-10"><input type="checkbox" @change="toggleAll()" :checked="allTicked" aria-label="Select all products on this page" class="h-4 w-4 rounded border-ink-500 bg-ink-850 text-brand-600 focus:ring-brand-500"></th>
                         <th>Product</th><th>Category</th><th class="text-right">Price</th><th class="text-right">Stock</th><th>Status</th><th class="text-right">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     @forelse($products as $product)
                         <tr @class(['opacity-60' => ! $product->is_active])>
+                            <td><input type="checkbox" name="ids[]" value="{{ $product->id }}" form="bulk-form" x-model="ids" aria-label="Select {{ $product->name }}" class="h-4 w-4 rounded border-ink-500 bg-ink-850 text-brand-600 focus:ring-brand-500"></td>
                             <td>
                                 <div class="flex items-center gap-3">
                                     @if($product->image_url)
                                         <img src="{{ $product->image_url }}" alt="" class="h-11 w-11 rounded-lg object-cover ring-1 ring-ink-600">
                                     @else
-                                        <span class="block h-11 w-11 overflow-hidden rounded-lg ring-1 ring-ink-700"><x-takoyaki-art /></span>
+                                        <span class="block h-11 w-11 overflow-hidden rounded-lg ring-1 ring-ink-700"><x-takoyaki-art :name="$product->name" /></span>
                                     @endif
                                     <div>
                                         <p class="font-semibold text-fg">{{ $product->name }}</p>
@@ -83,7 +110,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="py-14 text-center text-ink-400">
+                        <tr><td colspan="7" class="py-14 text-center text-ink-400">
                             No products found.
                             <a href="{{ route('products.create') }}" class="font-semibold text-brand-400 hover:text-brand-300">Add your first product</a>.
                         </td></tr>

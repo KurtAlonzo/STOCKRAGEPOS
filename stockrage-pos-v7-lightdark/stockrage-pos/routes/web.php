@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     // Part 1: Products & inventory
     Route::resource('products', ProductController::class)->except('show');
     Route::patch('/products/{product}/toggle', [ProductController::class, 'toggle'])->name('products.toggle');
+    Route::post('/products/bulk-add-stock', [ProductController::class, 'bulkAddStock'])->name('products.bulk-add-stock');
     Route::post('/products/{product}/add-stock', [ProductController::class, 'addStock'])->name('products.add-stock');
     Route::post('/products/{product}/adjust', [ProductController::class, 'adjust'])->name('products.adjust');
 

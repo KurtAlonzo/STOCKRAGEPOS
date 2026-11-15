@@ -30,6 +30,9 @@ const themeVariables = plugin(({ addBase }) => {
 const inkShades = [100, 200, 300, 400, 500, 600, 700, 800, 850, 900, 950];
 const inkDark = ['#ececf0', '#d6d6dc', '#b4b4be', '#8b8b96', '#5b5b66', '#383840', '#27272d', '#1c1c21', '#16161a', '#111114', '#0b0b0d'];
 const inkLight = ['#16161a', '#2c2c33', '#4b4b55', '#6b6b76', '#8b8b96', '#c4c4cc', '#dcdce2', '#e9e9ee', '#f1f1f4', '#ffffff', '#f4f4f7'];
+const railVariant = plugin(({ addVariant }) => {
+    addVariant('rail', '@media (min-width: 1024px) { html[data-sidebar="collapsed"] & }');
+});
 const modeVariables = plugin(({ addBase }) => {
     const vars = (list, fg) => ({ ...Object.fromEntries(inkShades.map((shade, i) => [`--ink-${shade}`, rgb(list[i])])), '--fg': rgb(fg) });
     addBase({
@@ -69,5 +72,5 @@ export default {
         },
     },
 
-    plugins: [forms, themeVariables, modeVariables],
+    plugins: [forms, themeVariables, modeVariables, railVariant],
 };

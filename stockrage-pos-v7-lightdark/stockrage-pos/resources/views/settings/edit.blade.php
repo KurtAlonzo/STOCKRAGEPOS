@@ -7,7 +7,7 @@
         <div>
             <label class="label" for="business_name">Business name</label>
             <input id="business_name" name="business_name" value="{{ old('business_name', $businessName) }}" required maxlength="60" class="input">
-            <p class="hint">Shown under the logo in the sidebar.</p>
+            <p class="hint">Printed at the top of every receipt.</p>
             <x-input-error :messages="$errors->get('business_name')" class="mt-1.5" />
         </div>
 

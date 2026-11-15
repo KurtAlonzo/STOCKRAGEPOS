@@ -42,11 +42,12 @@ class AccessTest extends TestCase
     {
         $this->app['env'] = 'production';
 
-        config(['admin.password' => 'password']);
+        putenv('ADMIN_PASSWORD=password');
         try {
             $this->expectException(\RuntimeException::class);
             app(\Database\Seeders\AdminUserSeeder::class)->run();
         } finally {
+            putenv('ADMIN_PASSWORD');
             $this->assertDatabaseCount('users', 0);
         }
     }
@@ -55,8 +56,12 @@ class AccessTest extends TestCase
     {
         $this->app['env'] = 'production';
 
-        config(['admin.password' => 'Takoyaki-2026!']);
-        app(\Database\Seeders\AdminUserSeeder::class)->run();
+        putenv('ADMIN_PASSWORD=Takoyaki-2026!');
+        try {
+            app(\Database\Seeders\AdminUserSeeder::class)->run();
+        } finally {
+            putenv('ADMIN_PASSWORD');
+        }
 
         $this->assertDatabaseCount('users', 1);
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Takoyaki-2026!', User::firstOrFail()->password));

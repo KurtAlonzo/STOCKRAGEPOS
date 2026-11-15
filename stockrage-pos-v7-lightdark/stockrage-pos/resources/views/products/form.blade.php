@@ -39,6 +39,13 @@
             </div>
 
             <div>
+                <label class="label" for="pieces">Pieces per order (optional)</label>
+                <input id="pieces" name="pieces" type="number" step="1" min="1" max="1000" value="{{ old('pieces', $product->pieces) }}" class="input num" placeholder="e.g. 6">
+                <p class="hint">For single-size flavors like Classic Takoyaki: how many pieces one order has. Needed to mix the flavor into a bundle. Leave empty for products named like "Mix - Family Tray (25 pcs)".</p>
+                <x-input-error :messages="$errors->get('pieces')" class="mt-1.5" />
+            </div>
+
+            <div>
                 @if($editing)
                     <label class="label">Current stock</label>
                     <p class="num flex h-[38px] items-center rounded-lg border border-ink-700 bg-ink-850 px-3 text-sm font-semibold text-fg">{{ $product->stock }}</p>

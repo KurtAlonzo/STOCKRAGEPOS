@@ -137,4 +137,39 @@ class ProductInventoryTest extends TestCase
         $this->get('/products?status=out')->assertSee('Gamma Out')->assertDontSee('Beta Crab');
         $this->get('/products?status=inactive')->assertSee('Delta Hidden')->assertDontSee('Alpha Cheese');
     }
+
+    public function test_one_quantity_can_be_added_to_every_ticked_product(): void
+    {
+        $this->actingAs(\App\Models\User::factory()->create());
+        $a = Product::factory()->create(['stock' => 0]);
+        $b = Product::factory()->create(['stock' => 5]);
+        $c = Product::factory()->create(['stock' => 7]);
+
+        $this->get('/products')->assertOk()->assertSee('Add stock to many products')->assertSee('name="ids[]"', false);
+
+        $this->post('/products/bulk-add-stock', ['ids' => [$a->id, $b->id], 'quantity' => 50, 'reason' => 'Delivery'])
+            ->assertRedirect()->assertSessionHas('success', 'Added 50 to 2 products.');
+
+        $this->assertSame(50, $a->fresh()->stock);
+        $this->assertSame(55, $b->fresh()->stock);
+        $this->assertSame(7, $c->fresh()->stock); // not ticked, untouched
+        $this->assertDatabaseHas('stock_movements', ['product_id' => $a->id, 'type' => 'in', 'qty_change' => 50, 'previous_qty' => 0, 'new_qty' => 50, 'reason' => 'Delivery']);
+        $this->assertDatabaseHas('stock_movements', ['product_id' => $b->id, 'type' => 'in', 'qty_change' => 50, 'previous_qty' => 5, 'new_qty' => 55]);
+    }
+
+    public function test_bulk_add_needs_ticked_products_and_a_sensible_quantity(): void
+    {
+        $this->actingAs(\App\Models\User::factory()->create());
+        $p = Product::factory()->create(['stock' => 3]);
+
+        $this->post('/products/bulk-add-stock', ['quantity' => 5])->assertSessionHasErrors('ids');
+        $this->post('/products/bulk-add-stock', ['ids' => [$p->id], 'quantity' => 0])->assertSessionHasErrors('quantity');
+        $this->post('/products/bulk-add-stock', ['ids' => [$p->id], 'quantity' => 1.5])->assertSessionHasErrors('quantity');
+        $this->post('/products/bulk-add-stock', ['ids' => [99999], 'quantity' => 5])->assertSessionHasErrors('ids.0');
+
+        $this->assertSame(3, $p->fresh()->stock);
+
+        auth()->logout();
+        $this->post('/products/bulk-add-stock', ['ids' => [$p->id], 'quantity' => 5])->assertRedirect('/login');
+    }
 }

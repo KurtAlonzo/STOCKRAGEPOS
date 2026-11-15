@@ -65,19 +65,26 @@ class SaleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
+            'items' => ['required_without:bundles', 'array'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.qty' => ['required', 'integer', 'min:1', 'max:10000'],
+            'bundles' => ['required_without:items', 'array', 'max:50'],
+            'bundles.*.size' => ['required', 'string', 'max:60'],
+            'bundles.*.qty' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'bundles.*.parts' => ['required', 'array', 'min:1', 'max:20'],
+            'bundles.*.parts.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'bundles.*.parts.*.pieces' => ['required', 'integer', 'min:1', 'max:1000'],
             'amount_paid' => ['required', 'numeric', 'min:0'],
             'payment_method' => ['required', 'in:cash,gcash,card'],
         ]);
 
         try {
             $sale = $this->sales->checkout(
-                $data['items'],
+                $data['items'] ?? [],
                 $data['amount_paid'],
                 $data['payment_method'],
                 userId: $request->user()->id,
+                bundles: $data['bundles'] ?? [],
             );
         } catch (RuntimeException $e) {
             // Whole transaction rolled back: nothing was saved, no stock was deducted.

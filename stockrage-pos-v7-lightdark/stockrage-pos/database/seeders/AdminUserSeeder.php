@@ -11,8 +11,8 @@ class AdminUserSeeder extends Seeder
     /** The one admin account. Registration is disabled, so this is the only way in. */
     public function run(): void
     {
-        $email = config('admin.email');
-        $password = (string) config('admin.password');
+        $email = env('ADMIN_EMAIL', 'admin@stockrage.test');
+        $password = (string) env('ADMIN_PASSWORD', 'password');
 
         // Never create a live admin login with a guessable password.
         if (app()->isProduction() && ($password === 'password' || strlen($password) < 8)) {

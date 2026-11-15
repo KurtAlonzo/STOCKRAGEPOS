@@ -116,7 +116,7 @@ class DashboardReportsSettingsTest extends TestCase
         $this->put('/settings', ['business_name' => 'Kai Takoyaki Stand', 'default_low_stock_threshold' => 12])->assertSessionHas('success');
 
         $this->assertSame('Kai Takoyaki Stand', Setting::get('business_name'));
-        $this->get('/dashboard')->assertSee('Kai Takoyaki Stand');
+        $this->get('/settings')->assertSee('Kai Takoyaki Stand'); // (the name is on receipts, no longer under the sidebar logo)
         $this->get('/products/create')->assertSee('value="12"', false);
 
         $this->put('/settings', ['business_name' => '', 'default_low_stock_threshold' => -1])->assertSessionHasErrors(['business_name', 'default_low_stock_threshold']);

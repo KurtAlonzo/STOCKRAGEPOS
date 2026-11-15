@@ -67,8 +67,29 @@ class ThemeTest extends TestCase
         $this->actingAs(User::factory()->create());
         $this->get('/dashboard')->assertOk()
             ->assertSee('Switch between light and dark mode')
-            ->assertSee('Light mode')
-            ->assertSee('Dark mode')
             ->assertSee('stockrage.mode', false);
+    }
+
+    public function test_sidebar_has_no_settings_link_or_shop_name_and_keeps_its_state_before_paint(): void
+    {
+        Setting::set('business_name', 'Hidden Under Logo Shop');
+        $this->actingAs(User::factory()->create());
+
+        $html = $this->get('/dashboard')->assertOk()
+            ->assertDontSee('Hidden Under Logo Shop')
+            ->assertSee('Hide menu')
+            ->assertSee('Show menu')
+            ->assertSee('window.toggleSidebar()', false)
+            ->assertSee("setAttribute('data-sidebar'", false)
+            ->getContent();
+
+        $this->assertStringNotContainsString(route('settings.edit'), $html);
+
+        // Hide-menu and the light/dark button share one row, above "Today so far".
+        $this->assertLessThan(strpos($html, 'Today so far'), strpos($html, 'window.toggleSidebar()', strpos($html, '<aside')));
+        $this->assertLessThan(strpos($html, 'Today so far'), strpos($html, 'window.toggleMode()', strpos($html, '<aside')));
+        // ...and they sit right under the logo, above the menu links.
+        $this->assertLessThan(strpos($html, 'aria-label="Main"'), strpos($html, 'window.toggleSidebar()', strpos($html, '<aside')));
+        $this->get('/settings')->assertOk(); // the page itself still exists
     }
 }

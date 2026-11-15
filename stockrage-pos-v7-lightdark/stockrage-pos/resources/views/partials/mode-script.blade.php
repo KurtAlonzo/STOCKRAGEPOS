@@ -5,6 +5,16 @@
         var mode = 'dark';
         try { mode = localStorage.getItem(KEY) === 'light' ? 'light' : 'dark'; } catch (e) {}
         document.documentElement.classList.toggle('dark', mode === 'dark');
+        // Sidebar: decided here, before the page paints, so it never jumps when you change pages.
+        var SIDE = 'stockrage.sidebar';
+        var side = 'open';
+        try { side = localStorage.getItem(SIDE) === 'collapsed' ? 'collapsed' : 'open'; } catch (e) {}
+        document.documentElement.setAttribute('data-sidebar', side);
+        window.toggleSidebar = function () {
+            side = document.documentElement.getAttribute('data-sidebar') === 'collapsed' ? 'open' : 'collapsed';
+            document.documentElement.setAttribute('data-sidebar', side);
+            try { localStorage.setItem(SIDE, side); } catch (e) {}
+        };
         window.toggleMode = function () {
             var dark = !document.documentElement.classList.contains('dark');
             document.documentElement.classList.toggle('dark', dark);

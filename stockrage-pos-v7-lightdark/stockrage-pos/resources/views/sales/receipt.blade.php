@@ -61,6 +61,7 @@
         @foreach($sale->items as $item)
             <div class="item">
                 <div class="name">{{ $item->product->name }}</div>
+                @if($item->note)<div class="muted" style="font-size:11px">{{ $item->note }}</div>@endif
                 <div class="row muted">
                     <span>{{ $item->qty }} × ₱{{ number_format($item->price, 2) }}</span>
                     <span>₱{{ number_format($item->subtotal, 2) }}</span>

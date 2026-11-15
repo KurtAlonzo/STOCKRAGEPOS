@@ -17,7 +17,7 @@
                 <tbody>
                 @foreach($sale->items as $item)
                     <tr>
-                        <td class="font-medium text-fg">{{ $item->product->name }}</td>
+                        <td class="font-medium text-fg">{{ $item->product->name }}@if($item->note)<span class="block text-xs font-normal text-ink-400">{{ $item->note }}</span>@endif</td>
                         <td class="num text-right">{{ $item->qty }}</td>
                         <td class="num text-right text-ink-300">₱{{ number_format($item->price, 2) }}</td>
                         <td class="num text-right font-semibold text-fg">₱{{ number_format($item->subtotal, 2) }}</td>

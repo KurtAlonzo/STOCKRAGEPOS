@@ -10,7 +10,7 @@ use RuntimeException;
 
 class SaleService
 {
-    public function __construct(private StockService $stock)
+    public function __construct(private StockService $stock, private BundleService $bundles)
     {
     }
 
@@ -22,6 +22,7 @@ class SaleService
      * we never trust a total sent by the browser.
      *
      * @param  array<int, array{product_id:int, qty:int}>  $items
+     * @param  array<int, array{size:string, parts:array<int, array{product_id:int, pieces:int}>}>  $bundles  see BundleService
      *
      * @throws RuntimeException when stock or payment is not enough
      */
@@ -31,14 +32,15 @@ class SaleService
         string $paymentMethod,
         ?CarbonInterface $at = null,
         ?int $userId = null,
+        array $bundles = [],
     ): Sale {
         $items = $this->mergeDuplicates($items);
 
-        if ($items === []) {
+        if ($items === [] && $bundles === []) {
             throw new RuntimeException('The cart is empty');
         }
 
-        return DB::transaction(function () use ($items, $amountPaid, $paymentMethod, $at, $userId) {
+        return DB::transaction(function () use ($items, $bundles, $amountPaid, $paymentMethod, $at, $userId) {
             $sale = new Sale([
                 'user_id' => $userId,
                 'total' => 0,
@@ -53,26 +55,40 @@ class SaleService
             }
             $sale->save();
 
+            // One list of lines: normal items at the product's price, bundle parts at their share of the tray price.
+            $lines = [];
+            foreach ($items as $item) {
+                $lines[] = ['product_id' => $item['product_id'], 'qty' => $item['qty'], 'price' => null, 'cost' => null, 'note' => null];
+            }
+            foreach ($bundles as $bundle) {
+                foreach ($this->bundles->resolve($bundle) as $line) {
+                    $lines[] = ['product_id' => $line['product']->id, 'qty' => $line['qty'], 'price' => $line['price'], 'cost' => $line['cost'], 'note' => $line['note']];
+                }
+            }
+            usort($lines, fn ($a, $b) => $a['product_id'] <=> $b['product_id']); // stable lock order
+
             $totalCents = 0;
 
-            // Lock products in a stable order to avoid deadlocks.
-            foreach ($items as $item) {
-                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
+            foreach ($lines as $line) {
+                $product = Product::query()->lockForUpdate()->findOrFail($line['product_id']);
 
                 if (! $product->is_active) {
                     throw new RuntimeException($product->name.' is not available');
                 }
 
-                $totalCents += (int) round(((float) $product->price) * 100) * $item['qty'];
+                $price = $line['price'] ?? (float) $product->price;
+                $cost = $line['cost'] ?? (float) ($product->cost_price ?? 0);
+                $totalCents += (int) round($price * 100) * $line['qty'];
 
                 $sale->items()->create([
                     'product_id' => $product->id,
-                    'qty' => $item['qty'],
-                    'price' => $product->price,
-                    'cost' => $product->cost_price ?? 0,
+                    'qty' => $line['qty'],
+                    'price' => $price,
+                    'cost' => $cost,
+                    'note' => $line['note'],
                 ]);
 
-                $this->stock->change($product, -$item['qty'], 'sale', 'Sale #'.$sale->id, $at);
+                $this->stock->change($product, -$line['qty'], 'sale', 'Sale #'.$sale->id.($line['note'] ? ' ('.$line['note'].')' : ''), $at);
             }
 
             $total = $totalCents / 100;

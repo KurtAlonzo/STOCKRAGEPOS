@@ -60,6 +60,7 @@ class ProductController extends Controller
                 'category' => $data['category'] ?? null,
                 'price' => $data['price'],
                 'cost_price' => $data['cost_price'] ?? 0,
+                'pieces' => $data['pieces'] ?? null,
                 'stock' => 0,
                 'low_stock_threshold' => $data['low_stock_threshold'],
                 'is_active' => $request->boolean('is_active'),
@@ -94,6 +95,7 @@ class ProductController extends Controller
             'category' => $data['category'] ?? null,
             'price' => $data['price'],
             'cost_price' => $data['cost_price'] ?? 0,
+            'pieces' => $data['pieces'] ?? null,
             'low_stock_threshold' => $data['low_stock_threshold'],
             'is_active' => $request->boolean('is_active'),
         ];
@@ -143,6 +145,30 @@ class ProductController extends Controller
         return back()->with('success', "Added {$data['quantity']} to {$product->name}. New stock: {$product->stock}.");
     }
 
+    /** Add the same quantity of stock to every ticked product at once (each one is still recorded in Stock History). */
+    public function bulkAddStock(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ], [
+            'ids.required' => 'Select at least one product first.',
+            'ids.min' => 'Select at least one product first.',
+        ]);
+
+        $quantity = (int) $data['quantity'];
+        $reason = $data['reason'] ?? 'Stock added (bulk)';
+
+        $products = DB::transaction(function () use ($data, $quantity, $reason) {
+            return Product::query()->whereIn('id', array_unique($data['ids']))->orderBy('name')->get()
+                ->each(fn (Product $product) => $this->stock->change($product, $quantity, 'in', $reason));
+        });
+
+        return back()->with('success', "Added {$quantity} to {$products->count()} ".\Illuminate\Support\Str::plural('product', $products->count()).'.');
+    }
+
     public function adjust(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
@@ -178,6 +204,7 @@ class ProductController extends Controller
             'category' => ['nullable', 'string', 'max:100'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'cost_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'pieces' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'stock' => $creating ? ['nullable', 'integer', 'min:0', 'max:1000000'] : ['prohibited'],
             'low_stock_threshold' => ['required', 'integer', 'min:0', 'max:1000000'],
             'image' => ['nullable', 'image', 'max:2048'], // 2 MB
