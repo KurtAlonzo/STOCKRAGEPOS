@@ -62,17 +62,19 @@ class SaleService
             }
             foreach ($bundles as $bundle) {
                 foreach ($this->bundles->resolve($bundle) as $line) {
-                    $lines[] = ['product_id' => $line['product']->id, 'qty' => $line['qty'], 'price' => $line['price'], 'cost' => $line['cost'], 'note' => $line['note']];
+                    $lines[] = ['product_id' => $line['product']->id, 'qty' => $line['qty'], 'price' => $line['price'], 'cost' => $line['cost'], 'note' => $line['note'], 'allocated_pieces' => $line['allocated_pieces'] ?? null];
                 }
             }
             usort($lines, fn ($a, $b) => $a['product_id'] <=> $b['product_id']); // stable lock order
 
             $totalCents = 0;
+            $deductions = [];
+            $shopMenu = Product::whereNotNull('stock_flavor')->exists();
 
             foreach ($lines as $line) {
                 $product = Product::query()->lockForUpdate()->findOrFail($line['product_id']);
 
-                if (! $product->is_active) {
+                if (! $product->is_active || ($shopMenu && ! $product->recipe)) {
                     throw new RuntimeException($product->name.' is not available');
                 }
 
@@ -80,15 +82,22 @@ class SaleService
                 $cost = $line['cost'] ?? (float) ($product->cost_price ?? 0);
                 $totalCents += (int) round($price * 100) * $line['qty'];
 
+                $recipe = $product->recipe ?? [$product->id => 1];
+                $used = [];
+                foreach ($recipe as $stockId => $pieces) {
+                    $used[$stockId] = ($product->recipe && isset($line['allocated_pieces'])
+                        ? $line['allocated_pieces'] : $pieces) * $line['qty'];
+                    $deductions[$stockId] = ($deductions[$stockId] ?? 0) + $used[$stockId];
+                }
+
                 $sale->items()->create([
+                    'stock_used' => $used,
                     'product_id' => $product->id,
                     'qty' => $line['qty'],
                     'price' => $price,
                     'cost' => $cost,
                     'note' => $line['note'],
                 ]);
-
-                $this->stock->change($product, -$line['qty'], 'sale', 'Sale #'.$sale->id.($line['note'] ? ' ('.$line['note'].')' : ''), $at);
             }
 
             $total = $totalCents / 100;
@@ -96,6 +105,15 @@ class SaleService
 
             if ($paidCents < $totalCents) {
                 throw new RuntimeException('Payment is not enough');
+            }
+
+            ksort($deductions);
+            foreach ($deductions as $id => $pieces) {
+                $source = Product::lockForUpdate()->findOrFail($id);
+                if (! $source->is_active) {
+                    throw new RuntimeException($source->name.' is not available');
+                }
+                $this->stock->change($source, -$pieces, 'sale', 'Sale #'.$sale->id, $at);
             }
 
             $sale->update([
@@ -119,9 +137,15 @@ class SaleService
                 throw new RuntimeException('Sale #'.$locked->id.' is already voided');
             }
 
-            foreach ($locked->items()->orderBy('product_id')->get() as $item) {
-                $product = Product::query()->findOrFail($item->product_id);
-                $this->stock->change($product, +$item->qty, 'void', 'Void Sale #'.$locked->id.($reason ? ' - '.$reason : ''));
+            $returns = [];
+            foreach ($locked->items as $item) {
+                foreach ($item->stock_used ?? [$item->product_id => $item->qty] as $id => $qty) {
+                    $returns[$id] = ($returns[$id] ?? 0) + $qty;
+                }
+            }
+            ksort($returns);
+            foreach ($returns as $id => $qty) {
+                $this->stock->change(Product::findOrFail($id), $qty, 'void', 'Void Sale #'.$locked->id.($reason ? ' - '.$reason : ''));
             }
 
             $locked->update([

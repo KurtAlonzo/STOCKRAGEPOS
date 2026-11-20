@@ -2,6 +2,14 @@
     <x-page-header title="Point of Sale" subtitle="Choose a size, tick the flavors, set how many.">
     </x-page-header>
 
+    @if($checkout = session('last_checkout'))
+        <div class="card card-pad mb-4 flex flex-wrap items-center gap-4" role="status">
+            <strong>Sale #{{ $checkout['id'] }} saved. Change due ₱{{ number_format($checkout['change'], 2) }}</strong>
+            <a class="btn-secondary" href="{{ route('sales.receipt', $checkout['id']) }}">View last receipt</a>
+            <a class="btn-secondary" href="{{ route('sales.receipt', ['sale' => $checkout['id'], 'print' => 1]) }}">Print last receipt</a>
+        </div>
+    @endif
+
     <div x-data='pos(@json($catalog), @json(route("pos.checkout")), @json($sizes))' @keydown.escape.window="sizeOpen = false" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_26rem]">
 
         {{-- ============ Sizes ============ --}}
@@ -28,7 +36,7 @@
                         </div>
                         <div class="flex flex-1 flex-col gap-1 p-3">
                             <p class="text-base font-bold leading-snug text-fg" x-text="s.label"></p>
-                            <p class="num text-xs text-ink-400"><span x-text="s.pcs"></span> pcs · <span x-text="s.mixable ? 'can mix flavors' : 'one flavor'"></span></p>
+                            <p class="num text-xs text-ink-400"><span x-text="s.key === 'solo' && s.flavors.some(f => f.unit_pcs !== s.pcs) ? '5–6' : s.pcs"></span> pcs · <span x-text="s.mixable ? 'can mix flavors' : 'one flavor'"></span></p>
                             <p class="num text-sm font-bold text-brand-300">from <span x-text="peso(sizeFrom(s))"></span> <span x-show="s.discount > 0" class="ml-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-bold text-emerald-300" x-text="'save ' + s.discount + '%'"></span></p>
                         </div>
                     </button>
@@ -57,8 +65,6 @@
                          :class="message.type === 'success' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'" role="status">
                         <span>
                             <span x-text="message.text"></span>
-                            <a x-show="message.saleId" :href="'{{ url('/sales') }}/' + message.saleId" class="ml-1 underline underline-offset-2">View</a>
-                            <a x-show="message.saleId" :href="'{{ url('/sales') }}/' + message.saleId + '/receipt?print=1'" target="_blank" class="ml-2 font-bold underline underline-offset-2">Print receipt</a>
                         </span>
                         <button type="button" @click="message = null" class="opacity-70 hover:opacity-100" aria-label="Dismiss"><x-icon name="close" class="h-4 w-4" /></button>
                     </div>
@@ -142,7 +148,7 @@
             <div class="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-ink-700 bg-ink-900 shadow-2xl sm:rounded-2xl">
                 <div class="flex items-start justify-between border-b border-ink-700 px-5 py-4">
                     <div>
-                        <h2 class="text-lg font-bold text-fg"><span x-text="size ? size.label : ''"></span> <span class="num text-sm font-normal text-ink-400" x-text="size ? '· ' + size.pcs + ' pcs' : ''"></span></h2>
+                        <h2 class="text-lg font-bold text-fg"><span x-text="size ? size.label : ''"></span> <span class="num text-sm font-normal text-ink-400" x-text="size && size.key !== 'solo' ? '· ' + size.pcs + ' pcs' : ''"></span></h2>
                         <p class="text-sm text-ink-400" x-text="size && size.mixable ? 'Tick a flavor. Tick two or more to mix: the pieces are split evenly. Tap again to remove.' : 'Tick one flavor only. Tap again to remove.'"></p>
                     </div>
                     <button type="button" @click="closeSize()" class="rounded-lg p-2 text-ink-300 hover:bg-ink-800" aria-label="Close"><x-icon name="close" /></button>
@@ -170,8 +176,8 @@
                                         <p class="num text-xs text-ink-400">
                                             <span x-show="f.list_price > f.price" class="line-through opacity-60" x-text="peso(f.list_price)"></span>
                                             <span x-text="peso(f.price) + (size.mixable ? ' per tray' : '')"></span>
-                                            · <span :class="productById(f.product_id).stock <= 0 ? 'text-rose-400' : ''" x-text="productById(f.product_id).stock <= 0 ? 'out of stock' : left(productById(f.product_id)) + ' left'"></span>
-                                            <span x-show="f.exclusive" class="text-ink-300"> · ready-made mix</span>
+                                            · <span x-text="availableText(f)"></span>
+                                            <span x-show="f.exclusive" class="text-ink-300"> · ready-made mix (<span x-text="f.unit_pcs"></span> pcs)</span>
                                         </p>
                                     </div>
                                 </button>

@@ -29,13 +29,32 @@ export default (catalog, checkoutUrl, sizes = []) => ({
         return p.stock > 0 && p.stock <= p.threshold;
     },
 
-    // sets of a product used by the bundles in the order
-    inBundles(p) {
-        return this.bundles.reduce((n, b) => n + b.qty * b.parts.filter((x) => x.product_id === p.id).length, 0);
+    requirements(part) {
+        const product = this.productById(part.product_id);
+        if (!product.recipe) return { [product.id]: 1 };
+        const ids = Object.keys(product.recipe);
+        return ids.length === 1 ? { [ids[0]]: part.pieces } : product.recipe;
     },
 
-    left(p) {
-        return p.stock - this.inBundles(p);
+    available(stockId) {
+        const stock = this.productById(Number(stockId))?.stock ?? 0;
+        return this.bundles.reduce((left, tray) => left - tray.qty * tray.parts.reduce(
+            (used, part) => used + (this.requirements(part)[stockId] ?? 0), 0
+        ), stock);
+    },
+
+    capacity(part) {
+        return Math.min(...Object.entries(this.requirements(part)).map(
+            ([id, needed]) => Math.floor(this.available(id) / needed)
+        ));
+    },
+
+    availableText(f) {
+        const recipe = this.productById(f.product_id).recipe;
+        if (recipe && Object.keys(recipe).length === 1) {
+            return this.available(Object.keys(recipe)[0]) + ' pcs left';
+        }
+        return this.capacity({ ...f, pieces: f.unit_pcs }) + ' orders available';
     },
 
     // ---- size cards ------------------------------------------------------
@@ -49,10 +68,12 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     sizeLeft(s) {
-        return s.flavors.reduce((n, f) => {
-            const p = this.productById(f.product_id);
-            return n + (p ? Math.max(0, this.left(p)) : 0);
-        }, 0);
+        if (s.flavors.some(f => this.capacity({ ...f, pieces: f.unit_pcs }) > 0)) return 1;
+        const available = s.flavors.filter(f => !f.exclusive).map(f => {
+            const recipe = this.productById(f.product_id).recipe;
+            return recipe ? this.available(Object.keys(recipe)[0]) : 0;
+        }).filter(pieces => pieces >= s.min_pieces);
+        return s.mixable && available.length >= 2 && available.reduce((a, b) => a + b, 0) >= s.pcs ? 1 : 0;
     },
 
     sizeCount(s) {
@@ -78,8 +99,8 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     flavorOpen(f) {
-        const p = this.productById(f.product_id);
-        return !!p && p.stock > 0 && (this.left(p) > 0 || this.isPicked(f));
+        const pieces = this.size.mixable && !f.exclusive ? this.size.min_pieces : f.unit_pcs;
+        return this.isPicked(f) || this.capacity({ ...f, pieces }) > 0;
     },
 
     // tick / untick a flavor. Solo and the ready-made Mix take one flavor only; trays can mix.
@@ -182,7 +203,7 @@ export default (catalog, checkoutUrl, sizes = []) => ({
 
     // most that can be added: what the least-stocked ticked flavor still has
     get trayMax() {
-        const lefts = this.chosen.map((f) => this.left(this.productById(f.product_id)));
+        const lefts = this.chosen.map((f) => this.capacity({ ...f, pieces: this.isMixed ? this.pieceFor(f) : f.unit_pcs }));
         return lefts.length ? Math.max(0, Math.min(...lefts, 99)) : 0;
     },
 
@@ -207,10 +228,10 @@ export default (catalog, checkoutUrl, sizes = []) => ({
         this.message = null;
         const mixed = this.isMixed;
         const parts = this.chosen.map((f) => {
-            const pieces = mixed ? this.pieceFor(f) : this.size.pcs;
+            const pieces = mixed ? this.pieceFor(f) : (f.sized ? f.unit_pcs : this.size.pcs);
             return { product_id: f.product_id, flavor: f.flavor, pieces, cents: mixed ? this.pieceCents(f, pieces) : Math.round(f.price * 100) };
         });
-        this.bundles.push({ id: ++this.bundleSeq, size: this.size.label, pcs: this.size.pcs, qty: this.trayQty, parts, unitCents: this.unitCents });
+        this.bundles.push({ id: ++this.bundleSeq, size: this.size.label, pcs: parts.reduce((sum, part) => sum + part.pieces, 0), qty: this.trayQty, parts, unitCents: this.unitCents });
         this.sizeOpen = false;
     },
 
@@ -220,7 +241,7 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     canIncBundle(b) {
-        return b.qty < 99 && b.parts.every((x) => this.left(this.productById(x.product_id)) > 0);
+        return b.qty < 99 && b.parts.every((x) => this.capacity(x) > 0);
     },
 
     incBundle(b) {
@@ -304,25 +325,15 @@ export default (catalog, checkoutUrl, sizes = []) => ({
             const data = await res.json();
 
             if (res.ok && data.ok) {
-                // Reflect the new stock on the grid without reloading
-                Object.entries(data.stocks).forEach(([id, stock]) => {
-                    const p = this.products.find((x) => x.id === Number(id));
-                    if (p) p.stock = stock;
-                });
-                this.message = {
-                    type: 'success',
-                    saleId: data.sale_id,
-                    text: `Sale #${data.sale_id} saved. Change: ${window.peso(data.change)}`,
-                };
-                this.bundles = [];
-                this.paid = 0;
+                this.clear();
+                window.location.replace(data.pos_url);
             } else {
                 // Keep the cart so the cashier can fix it
                 const firstError = data.errors ? Object.values(data.errors)[0][0] : null;
                 this.message = { type: 'error', text: data.message || firstError || 'Could not save the sale.' };
             }
         } catch (e) {
-            this.message = { type: 'error', text: 'Network problem. The sale was not saved. Try again.' };
+            this.message = { type: 'error', text: 'Connection interrupted. Check sales history before retrying.' };
         } finally {
             this.busy = false;
         }

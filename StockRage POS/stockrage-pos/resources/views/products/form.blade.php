@@ -14,7 +14,7 @@
         <div class="grid gap-5 sm:grid-cols-2">
             <div class="sm:col-span-2">
                 <label class="label" for="name">Name</label>
-                <input id="name" name="name" value="{{ old('name', $product->name) }}" required maxlength="255" class="input" placeholder="e.g. Classic Takoyaki" autofocus>
+                <input id="name" name="name" @readonly($product->recipe || $product->stock_flavor) value="{{ old('name', $product->name) }}" required maxlength="255" class="input" placeholder="e.g. Classic Takoyaki" autofocus>
                 <x-input-error :messages="$errors->get('name')" class="mt-1.5" />
             </div>
 
@@ -38,6 +38,7 @@
                 <x-input-error :messages="$errors->get('cost_price')" class="mt-1.5" />
             </div>
 
+            @unless($product->recipe || $product->stock_flavor)
             <div>
                 <label class="label" for="pieces">Pieces per order (optional)</label>
                 <input id="pieces" name="pieces" type="number" step="1" min="1" max="1000" value="{{ old('pieces', $product->pieces) }}" class="input num" placeholder="e.g. 6">
@@ -45,8 +46,15 @@
                 <x-input-error :messages="$errors->get('pieces')" class="mt-1.5" />
             </div>
 
+            @endunless
+
             <div>
-                @if($editing)
+                @if($product->recipe)
+                    <label class="label">Stock per order</label>
+                    @foreach($product->recipe as $id => $pieces)
+                        <p>{{ $stockNames[$id] }} · {{ $pieces }} pcs</p>
+                    @endforeach
+                @elseif($editing)
                     <label class="label">Current stock</label>
                     <p class="num flex h-[38px] items-center rounded-lg border border-ink-700 bg-ink-850 px-3 text-sm font-semibold text-fg">{{ $product->stock }}</p>
                     <p class="hint">Change stock with <em>Add stock</em> or <em>Adjust</em> on the Products page, so it shows in Stock History.</p>
@@ -98,7 +106,7 @@
 
         <div class="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-ink-700 pt-5">
             <div>
-                @if($editing)
+                @if($editing && ! $product->recipe && ! $product->stock_flavor)
                     <button type="submit" form="delete-form" class="btn-danger" onclick="return confirm('Delete {{ addslashes($product->name) }}? This cannot be undone.')">
                         <x-icon name="trash" class="h-4 w-4" /> Delete
                     </button>

@@ -30,7 +30,7 @@ class DemoSalesSeeder extends Seeder
 
         mt_srand(42); // same demo data every time
 
-        $products = Product::active()->get();
+        $products = Product::active()->whereNotNull('recipe')->get();
         $methods = ['cash', 'cash', 'cash', 'gcash', 'card'];
 
         for ($daysAgo = 75; $daysAgo >= 0; $daysAgo--) {
@@ -40,15 +40,21 @@ class DemoSalesSeeder extends Seeder
             for ($i = 0; $i < $count; $i++) {
                 $at = $day->copy()->setTime(mt_rand(10, 20), mt_rand(0, 59), mt_rand(0, 59));
                 $lines = [];
+                $needed = [];
 
                 foreach ($products->shuffle()->take(mt_rand(1, 3)) as $product) {
                     $qty = mt_rand(1, 4);
-                    $product->refresh();
-
-                    if ($product->stock < $qty) {
-                        $stock->change($product, 150, 'in', 'Restock', $at->copy()->subHour());
+                    foreach ($product->recipe as $id => $pieces) {
+                        $needed[$id] = ($needed[$id] ?? 0) + $qty * $pieces;
                     }
                     $lines[] = ['product_id' => $product->id, 'qty' => $qty];
+                }
+
+                foreach ($needed as $id => $pieces) {
+                    $pool = Product::findOrFail($id);
+                    if ($pool->stock < $pieces) {
+                        $stock->change($pool, max(150, $pieces), 'in', 'Restock', $at->copy()->subHour());
+                    }
                 }
 
                 $total = collect($lines)->sum(fn ($l) => $l['qty'] * (float) $products->firstWhere('id', $l['product_id'])->price);
@@ -64,8 +70,8 @@ class DemoSalesSeeder extends Seeder
         }
 
         // Leave one product low and one out of stock so the warnings are visible in the demo.
-        $low = Product::where('name', 'Octobits')->first();
-        $out = Product::where('name', 'Overload Takoyaki')->first();
+        $low = Product::where('stock_flavor', "Bacon N' Cheese")->first();
+        $out = Product::where('stock_flavor', 'Overload')->first();
         if ($low) {
             $stock->change($low, 8 - $low->fresh()->stock, 'adjustment', 'Demo: low stock');
         }

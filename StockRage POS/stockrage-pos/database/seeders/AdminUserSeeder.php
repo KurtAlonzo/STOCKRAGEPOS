@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         $email = env('ADMIN_EMAIL', 'admin@stockrage.test');
-        $password = (string) env('ADMIN_PASSWORD', 'password');
+        $password = (string) config('pos.admin_password');
 
         // Never create a live admin login with a guessable password.
         if (app()->isProduction() && ($password === 'password' || strlen($password) < 8)) {
@@ -21,7 +21,7 @@ class AdminUserSeeder extends Seeder
             );
         }
 
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'Admin',
@@ -29,5 +29,6 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ],
         );
+        \App\Models\Setting::set('register_admin_id', $admin->id);
     }
 }

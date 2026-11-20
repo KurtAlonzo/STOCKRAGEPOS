@@ -224,19 +224,11 @@ class BundleTest extends TestCase
         $this->post('/products', ['name' => 'Bad', 'price' => 70, 'pieces' => 0, 'low_stock_threshold' => 5])->assertSessionHasErrors('pieces');
     }
 
-    public function test_seeder_gives_single_flavors_their_pieces_and_they_show_in_the_mix_choices(): void
+    public function test_seeded_custom_mix_choices_use_only_the_two_stocked_flavors(): void
     {
         $this->seed(\Database\Seeders\ProductSeeder::class);
-
-        foreach (['Classic Takoyaki', 'Cheese Takoyaki', 'Crab Stick Takoyaki', 'Octobits'] as $name) {
-            $this->assertNotNull(Product::where('name', $name)->first()->pieces, $name);
-        }
-
-        $flavors = collect(app(BundleService::class)->sizes()->firstWhere('label', 'Family Tray')['flavors'])->pluck('flavor')->all();
-        foreach (["Bacon N' Cheese", 'Overload', 'Classic Takoyaki', 'Cheese Takoyaki', 'Crab Stick Takoyaki', 'Octobits'] as $f) {
-            $this->assertContains($f, $flavors);
-        }
-        $this->assertNotContains('Mix', $flavors);
+        $flavors = app(BundleService::class)->sizes()->firstWhere('label', 'Family Tray')['flavors'];
+        $this->assertSame(["Bacon N' Cheese", 'Overload'], array_column($flavors, 'flavor'));
     }
 
     public function test_one_flavor_in_a_tray_is_charged_the_tray_price_not_the_flavor_price(): void

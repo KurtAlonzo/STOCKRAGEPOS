@@ -28,7 +28,7 @@ class DashboardController extends Controller
             ->whereBetween('sales.created_at', $monthRange)
             ->sum(DB::raw('(sale_items.price - sale_items.cost) * sale_items.qty'));
 
-        $lowStock = Product::active()
+        $lowStock = Product::active()->whereNull('recipe')
             ->whereColumn('stock', '<=', 'low_stock_threshold')
             ->orderBy('stock')->orderBy('name')
             ->get();

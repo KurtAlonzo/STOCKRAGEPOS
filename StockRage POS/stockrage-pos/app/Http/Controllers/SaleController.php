@@ -27,7 +27,10 @@ class SaleController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $query = Sale::with(['items.product', 'cashier'])->latest();
+        $defaultDates = ! $request->hasAny(['from', 'to']);
+        $from = $defaultDates ? today()->startOfMonth()->toDateString() : $request->query('from');
+        $to = $defaultDates ? today()->toDateString() : $request->query('to');
+        $query = Sale::with(['items.product', 'cashier'])->oldest()->orderBy('id');
 
         if ($search = ltrim(trim((string) $request->query('search')), '#')) {
             $query->where('id', $search);
@@ -37,16 +40,19 @@ class SaleController extends Controller
             $query->where('status', $status);
         }
 
-        if ($from = $request->query('from')) {
+        if ($from) {
             $query->whereDate('created_at', '>=', $from);
         }
 
-        if ($to = $request->query('to')) {
+        if ($to) {
             $query->whereDate('created_at', '<=', $to);
         }
 
         return view('sales.index', [
-            'sales' => $query->paginate(15)->withQueryString(),
+            'from' => $from,
+            'to' => $to,
+            'printing' => $request->boolean('print'),
+            'sales' => $request->boolean('print') ? $query->get() : $query->paginate(15)->withQueryString(),
         ]);
     }
 
@@ -91,12 +97,15 @@ class SaleController extends Controller
             return response()->json(['ok' => false, 'message' => $e->getMessage()], 422);
         }
 
+        $request->session()->put('last_checkout', ['id' => $sale->id, 'change' => $sale->change_amount]);
+
         $stocks = Product::query()
-            ->whereIn('id', $sale->items->pluck('product_id'))
+            ->whereIn('id', $sale->items->flatMap(fn ($item) => array_keys($item->stock_used))->unique())
             ->pluck('stock', 'id');
 
         return response()->json([
             'ok' => true,
+            'pos_url' => route('pos.index'),
             'sale_id' => $sale->id,
             'total' => (float) $sale->total,
             'change' => (float) $sale->change_amount,

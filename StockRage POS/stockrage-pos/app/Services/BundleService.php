@@ -22,7 +22,7 @@ use RuntimeException;
  * - Single-size flavors with "Pieces per order" set (Classic Takoyaki...) can join a mix too.
  * - Price: each flavor's price for that size divided by the pieces in it, times the pieces it gets, minus the size's
  *   discount (config/pos.php, whole pesos). Each flavor needs at least config('pos.min_pieces') pieces in a mix.
- * - Stock: each flavor used gives up ONE set of its own product for that size, for every tray sold.
+ * - SaleService deducts the allocated pieces from each flavor's shared stock.
  */
 class BundleService
 {
@@ -65,8 +65,9 @@ class BundleService
     {
         $bySize = []; // label => [flavor entries]
         $singles = [];
+        $shopMenu = Product::whereNotNull('stock_flavor')->exists();
 
-        foreach (Product::query()->active()->orderBy('name')->get() as $product) {
+        foreach (Product::query()->active()->when($shopMenu, fn ($q) => $q->whereNotNull('recipe'))->orderBy('name')->get() as $product) {
             if (preg_match(self::NAME, $product->name, $m)) {
                 [, $flavor, $label, $pcs] = $m;
                 $bySize[$label][] = [
@@ -197,7 +198,7 @@ class BundleService
                 'qty' => $qty,
                 'price' => (float) $flavor['price'],
                 'cost' => $cost,
-                'note' => $label,
+                'note' => $flavor['sized'] ? $size['label'].' ('.$flavor['unit_pcs'].' pcs)' : $label,
             ]];
         }
 
@@ -228,7 +229,8 @@ class BundleService
 
             $lines[] = [
                 'product' => $product,
-                'qty' => $qty, // one set of this flavor for every tray
+                'qty' => $qty,
+                'allocated_pieces' => $pieces,
                 // whole pesos: this flavor's share of the tray, after the size's discount (the POS screen uses the same formula)
                 'price' => (float) round(round(((float) $product->price) * 100) * $pieces * (100 - $discount) / ($unit * 10000)),
                 'cost' => round(round(((float) ($product->cost_price ?? 0)) * 100) * $pieces / $unit) / 100,

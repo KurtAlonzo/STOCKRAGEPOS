@@ -165,7 +165,7 @@ class UpgradesTest extends TestCase
         Product::factory()->create(['name' => 'No Photo Takoyaki', 'stock' => 10, 'image' => null]);
 
         $this->get('/pos')->assertOk()
-            ->assertSee('Print receipt')
+            ->assertDontSee('Print last receipt')
             ->assertSee('aria-label="Takoyaki"', false);
 
         $this->get('/products')->assertOk()->assertSee('aria-label="Takoyaki"', false);
@@ -201,7 +201,7 @@ class UpgradesTest extends TestCase
     public function test_pos_shows_the_four_size_cards_and_every_menu_item_is_reachable(): void
     {
         $this->seed(\Database\Seeders\ProductSeeder::class);
-        $this->assertSame(16, Product::count()); // 12 sized + 4 single flavors
+        $this->assertSame(12, Product::whereNotNull('recipe')->count());
 
         $view = $this->get('/pos')->assertOk()
             ->assertSee('Choose a size')
@@ -212,24 +212,13 @@ class UpgradesTest extends TestCase
         $this->assertSame([false, true, true, true], $sizes->pluck('mixable')->all()); // only the trays mix
         $this->assertSame([5, 12, 25, 50], $sizes->pluck('pcs')->all());
 
-        // Solo: the three flavors, one choice. Trays: the same three, plus the single flavors to mix.
+        // Every size offers the same three choices.
         $this->assertSame(["Bacon N' Cheese", 'Mix', 'Overload'], collect($sizes->first()['flavors'])->pluck('flavor')->all());
         $family = collect($sizes->firstWhere('label', 'Family Tray')['flavors']);
-        $this->assertEqualsCanonicalizing(['Classic Takoyaki', 'Cheese Takoyaki', 'Crab Stick Takoyaki', 'Octobits'], $family->pluck('flavor')->slice(3)->values()->all());
+        $this->assertSame(["Bacon N' Cheese", 'Mix', 'Overload'], $family->pluck('flavor')->all());
         $this->assertSame(['Mix'], $family->where('exclusive', true)->pluck('flavor')->values()->all());
 
-        // The catalog has all 16 with live stock; the 4 unsized ones are also plain cards.
-        $this->assertCount(16, $view->viewData('catalog'));
-        $this->assertCount(4, $view->viewData('others'));
-    }
-
-    public function test_a_product_without_flavor_and_size_is_its_own_card(): void
-    {
-        Product::factory()->create(['name' => 'Milk Tea', 'stock' => 5]);
-
-        $view = $this->get('/pos')->assertOk();
-        $this->assertCount(0, $view->viewData('sizes'));
-        $this->assertCount(1, $view->viewData('others'));
+        $this->assertCount(14, $view->viewData('catalog')); // twelve menu items and two ingredient balances
     }
 
     public function test_a_real_photo_in_public_images_menu_replaces_the_drawing(): void
