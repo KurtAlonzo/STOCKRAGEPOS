@@ -19,7 +19,10 @@ class ProductController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Product::query()->orderBy('name');
+        $query = Product::whereNull('recipe')
+            ->when($request->query('status') !== 'inactive', fn ($q) => $q->where('is_active', true))
+            ->orderByRaw('CASE WHEN stock <= low_stock_threshold THEN 0 ELSE 1 END')
+            ->orderByRaw('CASE WHEN stock <= low_stock_threshold THEN stock ELSE 0 END')->orderBy('name');
 
         if ($search = trim((string) $request->query('q'))) {
             $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
@@ -34,6 +37,7 @@ class ProductController extends Controller
         };
 
         return view('products.index', [
+            'menuPrices' => Product::whereNotNull('recipe')->orderBy('name')->get(),
             'products' => $query->paginate(20)->withQueryString(),
         ]);
     }
@@ -82,6 +86,7 @@ class ProductController extends Controller
     {
         return view('products.form', [
             'product' => $product,
+            'stockNames' => Product::whereNotNull('stock_flavor')->pluck('name', 'id'),
             'categories' => $this->categories(),
         ]);
     }
@@ -91,7 +96,7 @@ class ProductController extends Controller
         $data = $request->validate($this->rules(creating: false));
 
         $attributes = [
-            'name' => $data['name'],
+            'name' => ($product->recipe || $product->stock_flavor) ? $product->name : $data['name'],
             'category' => $data['category'] ?? null,
             'price' => $data['price'],
             'cost_price' => $data['cost_price'] ?? 0,
@@ -116,7 +121,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->saleItems()->exists()) {
+        if ($product->stock_flavor || $product->recipe || $product->saleItems()->exists()) {
             return back()->with('error', "{$product->name} has sales history and cannot be deleted. Mark it inactive instead.");
         }
 

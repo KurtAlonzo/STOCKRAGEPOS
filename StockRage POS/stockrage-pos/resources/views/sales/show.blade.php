@@ -1,7 +1,7 @@
 <x-app-layout :title="'Sale #'.$sale->id">
     <x-page-header :title="'Sale #'.$sale->id" :subtitle="$sale->created_at->format('l, F j, Y · g:i A')">
         <a href="{{ route('sales.index') }}" class="btn-ghost">← Sales history</a>
-        <a href="{{ route('sales.receipt', ['sale' => $sale, 'print' => 1]) }}" target="_blank" class="btn-secondary"><x-icon name="print" class="h-4 w-4" /> Print receipt</a>
+        <a href="{{ route('sales.receipt', ['sale' => $sale, 'print' => 1]) }}" class="btn-secondary"><x-icon name="print" class="h-4 w-4" /> Print receipt</a>
     </x-page-header>
 
     <div x-data="{ confirmVoid: false }" @keydown.escape.window="confirmVoid = false" class="grid max-w-5xl gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">

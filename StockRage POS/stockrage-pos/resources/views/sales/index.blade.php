@@ -1,6 +1,7 @@
 <x-app-layout title="Sales History">
     <x-page-header title="Sales History" subtitle="Every saved sale. Search by sale number or filter by date." />
 
+    @unless($printing)
     <form method="GET" class="card card-pad mb-4 flex flex-wrap items-end gap-3">
         <div class="min-w-[12rem] flex-1">
             <label for="search" class="label">Sale ID</label>
@@ -8,11 +9,11 @@
         </div>
         <div>
             <label for="from" class="label">From</label>
-            <input id="from" type="date" name="from" value="{{ request('from') }}" class="input">
+            <input id="from" type="date" name="from" value="{{ $from }}" class="input">
         </div>
         <div>
             <label for="to" class="label">To</label>
-            <input id="to" type="date" name="to" value="{{ request('to') }}" class="input">
+            <input id="to" type="date" name="to" value="{{ $to }}" class="input">
         </div>
         <div>
             <label for="status" class="label">Status</label>
@@ -23,10 +24,25 @@
             </select>
         </div>
         <button class="btn-secondary">Filter</button>
+        <button name="print" value="1" formtarget="_blank" class="btn-secondary">Print sales history</button>
         @if(request()->hasAny(['search', 'from', 'to', 'status']))
             <a href="{{ route('sales.index') }}" class="btn-ghost">Reset</a>
         @endif
     </form>
+    @else
+        <h1 class="hidden print:block text-xl font-bold">Sales history</h1>
+        <p class="mb-4">{{ $from ?: 'Beginning' }} through {{ $to ?: 'today' }} · {{ ucfirst(request('status') ?: 'All statuses') }} @if(request('search')) · Sale {{ request('search') }} @endif</p>
+        <style>
+            @media print {
+                body, main, table, th, td { background: white !important; color: black !important; }
+                .overflow-hidden, .overflow-x-auto { overflow: visible; }
+                .tbl td { white-space: normal; overflow: visible; color: black; }
+                .tbl th:last-child, .tbl td:last-child { display: none; }
+                tr { break-inside: avoid; }
+            }
+        </style>
+        <script>window.addEventListener('load', () => window.print());</script>
+    @endunless
     @if($errors->any())
         <div class="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">@foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach</div>
     @endif
@@ -60,5 +76,5 @@
         </div>
     </div>
 
-    <div class="mt-4">{{ $sales->links() }}</div>
+    @unless($printing)<div class="mt-4">{{ $sales->links() }}</div>@endunless
 </x-app-layout>

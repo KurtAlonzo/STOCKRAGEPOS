@@ -85,7 +85,7 @@
                             <td class="text-ink-300">{{ $product->category ?: '—' }}</td>
                             <td class="num text-right text-fg">₱{{ number_format($product->price, 2) }}</td>
                             <td class="num text-right">
-                                <span class="font-semibold text-fg">{{ $product->stock }}</span>
+                                <span class="font-semibold text-fg">{{ $product->stock }}{{ $product->stock_flavor ? ' pcs' : '' }}</span>
                                 <span class="block text-[11px] text-ink-500">alert ≤ {{ $product->low_stock_threshold }}</span>
                             </td>
                             <td><x-status-badge :product="$product" /></td>
@@ -121,6 +121,18 @@
         </div>
 
         <div class="mt-4">{{ $products->links() }}</div>
+
+        @if($menuPrices->isNotEmpty())
+            <details class="card card-pad mt-4">
+                <summary class="cursor-pointer font-semibold">Menu prices by size</summary>
+                @foreach($menuPrices as $item)
+                    <div class="flex items-center justify-between gap-3 py-2">
+                        <span>{{ $item->name }} · ₱{{ number_format($item->price, 2) }}</span>
+                        <a class="btn-secondary btn-sm" href="{{ route('products.edit', $item) }}">Edit</a>
+                    </div>
+                @endforeach
+            </details>
+        @endif
 
         {{-- Add stock modal --}}
         <div x-cloak x-show="modal === 'add'" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">

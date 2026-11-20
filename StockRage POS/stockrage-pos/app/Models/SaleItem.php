@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SaleItem extends Model
 {
-    protected $fillable = ['sale_id', 'product_id', 'qty', 'price', 'cost', 'note'];
+    protected $fillable = ['sale_id', 'product_id', 'qty', 'price', 'cost', 'note', 'stock_used'];
 
     protected function casts(): array
     {
         return [
             'qty' => 'integer',
+            'stock_used' => 'array',
             'price' => 'decimal:2',
             'cost' => 'decimal:2',
         ];

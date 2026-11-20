@@ -37,7 +37,7 @@
 </head>
 <body>
     <div class="bar">
-        <a href="{{ route('sales.show', $sale) }}" class="btn btn-light">← Back to sale</a>
+        <a href="{{ route('pos.index') }}" class="btn btn-light">Back to POS</a>
         <button type="button" class="btn btn-primary" onclick="window.print()">Print receipt</button>
     </div>
 
@@ -81,6 +81,7 @@
         @endif
     </div>
 
+    <script>window.addEventListener('afterprint', () => window.location.replace(@js(route('pos.index'))));</script>
     @if(request()->boolean('print'))
         <script>window.addEventListener('load', () => setTimeout(() => window.print(), 300));</script>
     @endif
