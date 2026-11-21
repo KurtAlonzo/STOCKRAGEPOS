@@ -10,59 +10,53 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    public function test_login_screen_offers_one_click_demo_without_credentials(): void
     {
-        $response = $this->get('/login');
+        config(['pos.admin_password' => 'test-admin-secret']);
 
-        $response->assertStatus(200);
-    }
-
-    public function test_demo_credentials_are_available_without_signing_in(): void
-    {
-        $this->withoutVite();
-        config(['pos.admin_email' => 'demo@example.com', 'pos.admin_password' => 'demo-test-password']);
-
-        $this->get('/login')
-            ->assertOk()
+        $this->get('/login')->assertOk()
             ->assertSee('Fill demo credentials')
-            ->assertSee('data-demo-email="demo@example.com"', false)
-            ->assertSee('data-demo-password="demo-test-password"', false);
-
+            ->assertSee(route('login.demo'), false)
+            ->assertDontSee('test-admin-secret')
+            ->assertDontSee('name="password"', false)
+            ->assertDontSee('name="email"', false);
         $this->assertGuest();
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_demo_button_signs_in_as_the_configured_admin(): void
     {
-        $user = User::factory()->create();
+        $admin = User::factory()->create(['email' => config('pos.admin_email')]);
+        $otherUser = User::factory()->create();
 
-        $response = $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
+        $this->post(route('login.demo'), ['email' => $otherUser->email])
+            ->assertRedirect(route('dashboard'));
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertAuthenticatedAs($admin);
     }
 
-    public function test_users_can_not_authenticate_with_invalid_password(): void
+    public function test_demo_login_requires_the_configured_admin_to_exist(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create();
 
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-
+        $this->post(route('login.demo'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('demo');
         $this->assertGuest();
     }
 
-    public function test_users_can_logout(): void
+    public function test_old_login_and_reviewer_link_cannot_sign_users_in(): void
+    {
+        $this->post('/login')->assertMethodNotAllowed();
+        $this->post('/review-sign-in')->assertNotFound();
+        $this->assertGuest();
+    }
+
+    public function test_logout_returns_to_the_demo_button(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post('/logout');
-
+        $this->actingAs($user)->post('/logout')->assertRedirect(route('login'));
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $this->get('/login')->assertOk()->assertSee('Fill demo credentials');
     }
 }
