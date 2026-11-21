@@ -31,7 +31,7 @@ export default (catalog, checkoutUrl, sizes = []) => ({
 
     requirements(part) {
         const product = this.productById(part.product_id);
-        if (!product.recipe) return { [product.id]: 1 };
+        if (!product.recipe) return { [product.id]: product.pieces ? part.pieces : 1 };
         const ids = Object.keys(product.recipe);
         return ids.length === 1 ? { [ids[0]]: part.pieces } : product.recipe;
     },
@@ -50,7 +50,9 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     availableText(f) {
-        const recipe = this.productById(f.product_id).recipe;
+        const product = this.productById(f.product_id);
+        const recipe = product.recipe;
+        if (!recipe && product.pieces) return this.available(product.id) + ' pcs left';
         if (recipe && Object.keys(recipe).length === 1) {
             return this.available(Object.keys(recipe)[0]) + ' pcs left';
         }
@@ -68,10 +70,11 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     sizeLeft(s) {
-        if (s.flavors.some(f => this.capacity({ ...f, pieces: f.unit_pcs }) > 0)) return 1;
+        if (s.flavors.some(f => this.capacity({ ...f, pieces: f.sized ? f.unit_pcs : s.pcs }) > 0)) return 1;
         const available = s.flavors.filter(f => !f.exclusive).map(f => {
-            const recipe = this.productById(f.product_id).recipe;
-            return recipe ? this.available(Object.keys(recipe)[0]) : 0;
+            const product = this.productById(f.product_id);
+            if (product.recipe) return this.available(Object.keys(product.recipe)[0]);
+            return product.pieces ? this.available(product.id) : 0;
         }).filter(pieces => pieces >= s.min_pieces);
         return s.mixable && available.length >= 2 && available.reduce((a, b) => a + b, 0) >= s.pcs ? 1 : 0;
     },
@@ -99,7 +102,7 @@ export default (catalog, checkoutUrl, sizes = []) => ({
     },
 
     flavorOpen(f) {
-        const pieces = this.size.mixable && !f.exclusive ? this.size.min_pieces : f.unit_pcs;
+        const pieces = this.size.mixable && !f.exclusive ? this.size.min_pieces : (f.sized ? f.unit_pcs : this.size.pcs);
         return this.isPicked(f) || this.capacity({ ...f, pieces }) > 0;
     },
 
@@ -203,7 +206,9 @@ export default (catalog, checkoutUrl, sizes = []) => ({
 
     // most that can be added: what the least-stocked ticked flavor still has
     get trayMax() {
-        const lefts = this.chosen.map((f) => this.capacity({ ...f, pieces: this.isMixed ? this.pieceFor(f) : f.unit_pcs }));
+        const lefts = this.chosen.map((f) => this.capacity({
+            ...f, pieces: this.isMixed ? this.pieceFor(f) : (f.sized ? f.unit_pcs : this.size.pcs),
+        }));
         return lefts.length ? Math.max(0, Math.min(...lefts, 99)) : 0;
     },
 

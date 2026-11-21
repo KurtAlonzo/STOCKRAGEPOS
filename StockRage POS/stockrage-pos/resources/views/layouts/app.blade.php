@@ -1,5 +1,5 @@
 @php
-    $lowCount = \App\Models\Product::active()->whereColumn('stock', '<=', 'low_stock_threshold')->count();
+    $lowCount = \App\Models\Product::active()->whereNull('recipe')->whereColumn('stock', '<=', 'low_stock_threshold')->count();
 
     // Sidebar links: [route, label, icon, active pattern, hint]
     $links = [

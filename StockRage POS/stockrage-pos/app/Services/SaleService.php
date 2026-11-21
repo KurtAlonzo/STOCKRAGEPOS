@@ -74,7 +74,7 @@ class SaleService
             foreach ($lines as $line) {
                 $product = Product::query()->lockForUpdate()->findOrFail($line['product_id']);
 
-                if (! $product->is_active || ($shopMenu && ! $product->recipe)) {
+                if (! $product->is_active || ($shopMenu && ! $product->recipe && ! $product->pieces)) {
                     throw new RuntimeException($product->name.' is not available');
                 }
 
@@ -82,7 +82,9 @@ class SaleService
                 $cost = $line['cost'] ?? (float) ($product->cost_price ?? 0);
                 $totalCents += (int) round($price * 100) * $line['qty'];
 
-                $recipe = $product->recipe ?? [$product->id => 1];
+                $recipe = $product->recipe ?? [
+                    $product->id => $product->pieces ? ($line['allocated_pieces'] ?? $product->pieces) : 1,
+                ];
                 $used = [];
                 foreach ($recipe as $stockId => $pieces) {
                     $used[$stockId] = ($product->recipe && isset($line['allocated_pieces'])

@@ -201,7 +201,7 @@ class BundleTest extends TestCase
         $line = Sale::firstOrFail()->items->firstWhere('product_id', $classic->id);
         $this->assertEquals(50, $line->price);
         $this->assertEquals(20, $line->cost);
-        $this->assertSame(9, $classic->fresh()->stock);
+        $this->assertSame(5, $classic->fresh()->stock);
     }
 
     public function test_a_single_flavor_without_pieces_is_not_offered_or_accepted(): void
@@ -234,7 +234,7 @@ class BundleTest extends TestCase
     public function test_one_flavor_in_a_tray_is_charged_the_tray_price_not_the_flavor_price(): void
     {
         $classic = Product::where('name', 'Classic Takoyaki')->firstOrFail();
-        $classic->update(['price' => 50, 'cost_price' => 20, 'pieces' => 6, 'stock' => 10]);
+        $classic->update(['price' => 50, 'cost_price' => 20, 'pieces' => 6, 'stock' => 100]);
 
         // Bacon Family Tray: its own tray price (240). Classic Family Tray: 50 per 6 pcs spread over 25 pcs = 208.
         $this->postJson('/pos/checkout', [
@@ -252,7 +252,7 @@ class BundleTest extends TestCase
         $this->assertEquals(208, $sale->items->firstWhere('product_id', $classic->id)->price);
         $this->assertSame('Family Tray (25 pcs)', $sale->items->firstWhere('product_id', $this->bacon->id)->note);
         $this->assertSame(8, $this->bacon->fresh()->stock);
-        $this->assertSame(9, $classic->fresh()->stock);
+        $this->assertSame(75, $classic->fresh()->stock);
     }
 
     public function test_solo_takes_exactly_one_flavor_from_products(): void

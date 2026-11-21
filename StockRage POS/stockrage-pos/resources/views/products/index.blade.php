@@ -85,7 +85,7 @@
                             <td class="text-ink-300">{{ $product->category ?: '—' }}</td>
                             <td class="num text-right text-fg">₱{{ number_format($product->price, 2) }}</td>
                             <td class="num text-right">
-                                <span class="font-semibold text-fg">{{ $product->stock }}{{ $product->stock_flavor ? ' pcs' : '' }}</span>
+                                <span class="font-semibold text-fg">{{ $product->stock }}{{ $product->stock_flavor || $product->pieces ? ' pcs' : '' }}</span>
                                 <span class="block text-[11px] text-ink-500">alert ≤ {{ $product->low_stock_threshold }}</span>
                             </td>
                             <td><x-status-badge :product="$product" /></td>

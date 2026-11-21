@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,31 +14,26 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(Request $request): View|RedirectResponse
+    public function create(): View
     {
-        if (! $request->cookie('register_logged_out')) {
-            $admin = \App\Models\User::find(\App\Models\Setting::get('register_admin_id'));
-            if ($admin) {
-                Auth::login($admin);
-                $request->session()->regenerate();
-
-                return redirect()->route('dashboard');
-            }
-        }
-
         return view('auth.login');
     }
 
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $request->authenticate();
+        $admin = User::where('email', config('pos.admin_email'))->first();
+        if (! $admin) {
+            return redirect()->route('login')->withErrors(['demo' => 'The demo account is unavailable.']);
+        }
+
+        Auth::login($admin);
 
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->withoutCookie('register_logged_out');
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -52,6 +47,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/')->withCookie(cookie()->forever('register_logged_out', '1'));
+        return redirect()->route('login');
     }
 }

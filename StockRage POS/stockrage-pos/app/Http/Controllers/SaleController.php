@@ -30,7 +30,13 @@ class SaleController extends Controller
         $defaultDates = ! $request->hasAny(['from', 'to']);
         $from = $defaultDates ? today()->startOfMonth()->toDateString() : $request->query('from');
         $to = $defaultDates ? today()->toDateString() : $request->query('to');
-        $query = Sale::with(['items.product', 'cashier'])->oldest()->orderBy('id');
+        $printing = $request->boolean('print');
+        $query = Sale::with(['items.product', 'cashier']);
+        if ($printing) {
+            $query->oldest()->orderBy('id');
+        } else {
+            $query->latest()->orderByDesc('id');
+        }
 
         if ($search = ltrim(trim((string) $request->query('search')), '#')) {
             $query->where('id', $search);
@@ -51,8 +57,8 @@ class SaleController extends Controller
         return view('sales.index', [
             'from' => $from,
             'to' => $to,
-            'printing' => $request->boolean('print'),
-            'sales' => $request->boolean('print') ? $query->get() : $query->paginate(15)->withQueryString(),
+            'printing' => $printing,
+            'sales' => $printing ? $query->get() : $query->paginate(15)->withQueryString(),
         ]);
     }
 

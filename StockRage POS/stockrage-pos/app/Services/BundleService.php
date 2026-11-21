@@ -67,7 +67,10 @@ class BundleService
         $singles = [];
         $shopMenu = Product::whereNotNull('stock_flavor')->exists();
 
-        foreach (Product::query()->active()->when($shopMenu, fn ($q) => $q->whereNotNull('recipe'))->orderBy('name')->get() as $product) {
+        $products = Product::query()->active()->when($shopMenu, fn ($query) => $query
+            ->where(fn ($menu) => $menu->whereNotNull('recipe')->orWhere('pieces', '>', 0)));
+
+        foreach ($products->orderBy('name')->get() as $product) {
             if (preg_match(self::NAME, $product->name, $m)) {
                 [, $flavor, $label, $pcs] = $m;
                 $bySize[$label][] = [
@@ -196,6 +199,7 @@ class BundleService
             return [[
                 'product' => $product,
                 'qty' => $qty,
+                'allocated_pieces' => $flavor['sized'] ? null : $size['pcs'],
                 'price' => (float) $flavor['price'],
                 'cost' => $cost,
                 'note' => $flavor['sized'] ? $size['label'].' ('.$flavor['unit_pcs'].' pcs)' : $label,

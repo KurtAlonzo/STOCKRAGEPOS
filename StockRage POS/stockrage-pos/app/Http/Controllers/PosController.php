@@ -24,6 +24,7 @@ class PosController extends Controller
             'name' => $p->name,
             'price' => (float) $p->price,
             'stock' => $p->stock,
+            'pieces' => $p->pieces,
             'recipe' => $p->recipe,
             'threshold' => $p->low_stock_threshold,
             'image' => $p->image_url,
