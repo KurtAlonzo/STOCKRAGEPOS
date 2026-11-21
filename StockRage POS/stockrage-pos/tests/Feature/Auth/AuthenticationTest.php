@@ -17,6 +17,20 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_demo_credentials_are_available_without_signing_in(): void
+    {
+        $this->withoutVite();
+        config(['pos.admin_email' => 'demo@example.com', 'pos.admin_password' => 'demo-test-password']);
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Fill demo credentials')
+            ->assertSee('data-demo-email="demo@example.com"', false)
+            ->assertSee('data-demo-password="demo-test-password"', false);
+
+        $this->assertGuest();
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();

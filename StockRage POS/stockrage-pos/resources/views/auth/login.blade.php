@@ -24,6 +24,14 @@
             Remember me
         </label>
 
+        <button type="button" class="btn-secondary w-full py-2.5" x-data
+                data-demo-email="{{ config('pos.admin_email') }}"
+                data-demo-password="{{ config('pos.admin_password') }}"
+                x-on:click="$el.form.elements.email.value = $el.dataset.demoEmail;
+                            $el.form.elements.password.value = $el.dataset.demoPassword">
+            Fill demo credentials
+        </button>
+
         <x-primary-button class="w-full py-2.5">Log in</x-primary-button>
     </form>
 </x-guest-layout>

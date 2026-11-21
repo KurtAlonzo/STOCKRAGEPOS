@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\User;
 use App\Services\SaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,15 +13,20 @@ class RegisterWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_register_enters_dashboard_and_logout_requires_credentials(): void
+    public function test_seeded_register_requires_credentials(): void
     {
         $this->seed();
-        $this->followingRedirects()->get('/')->assertOk()->assertSee('Dashboard');
-        $this->assertAuthenticated();
-        $logout = $this->post('/logout');
+        $this->followingRedirects()->get('/')->assertOk()->assertSee('Fill demo credentials');
         $this->assertGuest();
-        $cookie = $logout->getCookie('register_logged_out');
-        $this->withCookie('register_logged_out', $cookie->getValue())->get('/login')->assertOk()->assertSee('password');
+
+        $this->post('/login', [
+            'email' => config('pos.admin_email'),
+            'password' => config('pos.admin_password'),
+        ])->assertRedirect(route('dashboard', absolute: false));
+        $this->assertAuthenticated();
+
+        $this->post('/logout')->assertRedirect('/');
+        $this->followingRedirects()->get('/')->assertOk()->assertSee('Fill demo credentials');
         $this->assertGuest();
     }
 
@@ -42,7 +48,7 @@ class RegisterWorkflowTest extends TestCase
     public function test_sizes_share_pieces_and_overdraw_rolls_back_checkout(): void
     {
         $this->seed();
-        $this->followingRedirects()->get('/');
+        $this->actingAs(User::firstOrFail());
         $bacon = Product::where('name', "Bacon N' Cheese - Party Tray (50 pcs)")->firstOrFail();
         $over = Product::where('name', 'Overload - Party Tray (50 pcs)')->firstOrFail();
         $order = ['size' => 'Party Tray', 'qty' => 1, 'parts' => [['product_id' => $bacon->id, 'pieces' => 50]]];
@@ -61,7 +67,7 @@ class RegisterWorkflowTest extends TestCase
     public function test_print_contains_all_matching_sales_in_chronological_order(): void
     {
         $this->seed();
-        $this->followingRedirects()->get('/');
+        $this->actingAs(User::firstOrFail());
         $this->travelTo(now()->setDate(2026, 11, 20));
         foreach (range(0, 17) as $i) {
             $sale = new Sale(['total' => 0, 'amount_paid' => 0, 'change_amount' => 0, 'payment_method' => 'cash', 'status' => 'completed']);

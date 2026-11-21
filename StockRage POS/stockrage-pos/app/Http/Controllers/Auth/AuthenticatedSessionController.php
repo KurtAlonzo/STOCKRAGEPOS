@@ -14,18 +14,8 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(Request $request): View|RedirectResponse
+    public function create(): View
     {
-        if (! $request->cookie('register_logged_out')) {
-            $admin = \App\Models\User::find(\App\Models\Setting::get('register_admin_id'));
-            if ($admin) {
-                Auth::login($admin);
-                $request->session()->regenerate();
-
-                return redirect()->route('dashboard');
-            }
-        }
-
         return view('auth.login');
     }
 
@@ -38,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->withoutCookie('register_logged_out');
+        return redirect()->route('dashboard');
     }
 
     /**
@@ -52,6 +42,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/')->withCookie(cookie()->forever('register_logged_out', '1'));
+        return redirect('/');
     }
 }
