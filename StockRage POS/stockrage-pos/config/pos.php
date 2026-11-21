@@ -4,6 +4,8 @@
  | POS size rules. Keys are the size name as a slug ("Family Tray" = family-tray).
  */
 return [
+    'demo_email' => env('DEMO_EMAIL'),
+    'demo_password' => env('DEMO_PASSWORD'),
     'admin_password' => env('ADMIN_PASSWORD', 'password'),
     'admin_email' => env('ADMIN_EMAIL', 'admin@stockrage.test'),
     // Discount in percent for buying a bigger size (Solo has none). Change the numbers to taste, 0 = no discount.

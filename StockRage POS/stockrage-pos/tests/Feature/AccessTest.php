@@ -29,7 +29,7 @@ class AccessTest extends TestCase
     {
         $this->seed();
 
-        $this->post(route('login.demo'))->assertRedirect('/dashboard');
+        $this->post('/login', ['email' => config('pos.admin_email'), 'password' => config('pos.admin_password')])->assertRedirect('/dashboard');
 
         foreach (['/dashboard', '/pos', '/products', '/products/create', '/sales', '/stock-history', '/reports', '/reports?period=monthly', '/reports?period=yearly', '/settings', '/profile'] as $url) {
             $this->get($url)->assertOk()->assertSee('Stockrage', false);
